@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchContent } from "@/services/api";
 import { SectionCard } from "@/components/SectionCard";
 import { VideoCard } from "@/components/VideoCard";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -17,14 +17,16 @@ const Index = () => {
     queryFn: fetchContent,
   });
 
-  // Handle error state with toast
-  if (error) {
-    toast({
-      variant: "destructive",
-      title: "Error",
-      description: "Failed to load content. Please try again later.",
-    });
-  }
+  // Handle error state with toast inside useEffect
+  useEffect(() => {
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load content. Please try again later.",
+      });
+    }
+  }, [error, toast]);
 
   if (isLoading) {
     return (
