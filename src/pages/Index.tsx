@@ -15,6 +15,14 @@ const Index = () => {
   const { data: sections, isLoading, error } = useQuery({
     queryKey: ["content"],
     queryFn: fetchContent,
+    onError: (error) => {
+      console.error('Query error:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load content. Please try again later.",
+      });
+    },
   });
 
   if (isLoading) {
@@ -25,16 +33,18 @@ const Index = () => {
     );
   }
 
-  if (error) {
-    toast({
-      variant: "destructive",
-      title: "Error",
-      description: "Failed to load content. Please try again later.",
-    });
-    return null;
+  if (error || !sections) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-semibold text-red-500">Error Loading Content</h1>
+          <p className="text-muted-foreground">Please try refreshing the page.</p>
+        </div>
+      </div>
+    );
   }
 
-  const selectedPlaylist = sections?.flatMap(s => s.playlists).find(p => p.id === selectedPlaylistId);
+  const selectedPlaylist = sections.flatMap(s => s.playlists).find(p => p.id === selectedPlaylistId);
 
   return (
     <div className="min-h-screen bg-background p-6 md:p-8">
@@ -67,7 +77,7 @@ const Index = () => {
           </div>
         ) : (
           <div className="grid gap-8">
-            {sections?.map((section) => (
+            {sections.map((section) => (
               <SectionCard
                 key={section.id}
                 section={section}
@@ -79,6 +89,6 @@ const Index = () => {
       </div>
     </div>
   );
-};
+}
 
 export default Index;
