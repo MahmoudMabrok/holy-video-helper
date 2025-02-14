@@ -15,15 +15,16 @@ const Index = () => {
   const { data: sections, isLoading, error } = useQuery({
     queryKey: ["content"],
     queryFn: fetchContent,
-    onError: (error) => {
-      console.error('Query error:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to load content. Please try again later.",
-      });
-    },
   });
+
+  // Handle error state with toast
+  if (error) {
+    toast({
+      variant: "destructive",
+      title: "Error",
+      description: "Failed to load content. Please try again later.",
+    });
+  }
 
   if (isLoading) {
     return (
