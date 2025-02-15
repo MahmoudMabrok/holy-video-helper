@@ -9,9 +9,19 @@ interface VideoCardProps {
 }
 
 export function VideoCard({ video, onClick }: VideoCardProps) {
-  // Extract video ID from URL
-  const videoId = video.url.split('v=')[1];
-  const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+  // Extract video ID from URL - handle different YouTube URL formats
+  const getVideoId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return match && match[2].length === 11 ? match[2] : null;
+  };
+
+  const videoId = getVideoId(video.url);
+  const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : null;
+
+  if (!videoId || !thumbnailUrl) {
+    return null;
+  }
 
   return (
     <Card className="overflow-hidden transition-all duration-300 hover:scale-105 group" onClick={onClick}>

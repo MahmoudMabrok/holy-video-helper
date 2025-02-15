@@ -28,6 +28,13 @@ const Index = () => {
     }
   }, [error, toast]);
 
+  // Function to extract video ID from URL
+  const getVideoId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return match && match[2].length === 11 ? match[2] : null;
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -70,7 +77,7 @@ const Index = () => {
               <div className="w-full aspect-video mb-8">
                 <iframe
                   className="w-full h-full rounded-lg shadow-lg"
-                  src={`https://www.youtube.com/embed/${selectedVideoId}?autoplay=1`}
+                  src={`https://www.youtube.com/embed/${selectedVideoId}`}
                   title="YouTube video player"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -81,12 +88,16 @@ const Index = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {selectedPlaylist.videos.map((video) => {
-                const videoId = video.url.split('v=')[1];
                 return (
                   <VideoCard
                     key={video.title}
                     video={video}
-                    onClick={() => setSelectedVideoId(videoId)}
+                    onClick={() => {
+                      const videoId = getVideoId(video.url);
+                      if (videoId) {
+                        setSelectedVideoId(videoId);
+                      }
+                    }}
                   />
                 );
               })}
