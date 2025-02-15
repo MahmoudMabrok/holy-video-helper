@@ -47,7 +47,10 @@ const Index = () => {
     );
   }
 
-  const selectedPlaylist = sections.flatMap(s => s.playlists).find(p => p.id === selectedPlaylistId);
+  const selectedPlaylist = sections.flatMap(s => s.playlists).find(p => p.name === selectedPlaylistId);
+
+  console.log("selectedPlaylist:", selectedPlaylist);
+  
 
   return (
     <div className="min-h-screen bg-background p-6 md:p-8">
@@ -68,7 +71,7 @@ const Index = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {selectedPlaylist.videos.map((video) => (
                 <a
-                  key={video.id}
+                  key={video.title}
                   href={video.url}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -82,7 +85,7 @@ const Index = () => {
           <div className="grid gap-8">
             {sections.map((section) => (
               <SectionCard
-                key={section.id}
+                key={section.title}
                 section={section}
                 onPlaylistClick={setSelectedPlaylistId}
               />

@@ -20,9 +20,9 @@ export function SectionCard({ section, onPlaylistClick }: SectionCardProps) {
           <div className="grid gap-4">
             {section.playlists.map((playlist) => (
               <PlaylistCard
-                key={playlist.id}
+                key={playlist.name}
                 playlist={playlist}
-                onClick={() => onPlaylistClick(playlist.id)}
+                onClick={() => onPlaylistClick(playlist.name)}
               />
             ))}
           </div>
