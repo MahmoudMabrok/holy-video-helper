@@ -5,15 +5,16 @@ import { PlayCircle } from "lucide-react";
 
 interface VideoCardProps {
   video: Video;
+  onClick?: () => void;
 }
 
-export function VideoCard({ video }: VideoCardProps) {
+export function VideoCard({ video, onClick }: VideoCardProps) {
   // Extract video ID from URL
   const videoId = video.url.split('v=')[1];
   const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
 
   return (
-    <Card className="overflow-hidden transition-all duration-300 hover:scale-105 group">
+    <Card className="overflow-hidden transition-all duration-300 hover:scale-105 group" onClick={onClick}>
       <CardContent className="p-0 relative">
         <div className="aspect-video relative">
           <img

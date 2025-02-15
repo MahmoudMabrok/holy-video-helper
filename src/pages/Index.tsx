@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const { data: sections, isLoading, error } = useQuery({
@@ -17,7 +18,6 @@ const Index = () => {
     queryFn: fetchContent,
   });
 
-  // Handle error state with toast inside useEffect
   useEffect(() => {
     if (error) {
       toast({
@@ -49,9 +49,6 @@ const Index = () => {
 
   const selectedPlaylist = sections.flatMap(s => s.playlists).find(p => p.name === selectedPlaylistId);
 
-  console.log("selectedPlaylist:", selectedPlaylist);
-  
-
   return (
     <div className="min-h-screen bg-background p-6 md:p-8">
       <div className="max-w-7xl mx-auto">
@@ -68,17 +65,31 @@ const Index = () => {
               </Button>
               <h1 className="text-2xl font-semibold">{selectedPlaylist.name}</h1>
             </div>
+
+            {selectedVideoId && (
+              <div className="w-full aspect-video mb-8">
+                <iframe
+                  className="w-full h-full rounded-lg shadow-lg"
+                  src={`https://www.youtube.com/embed/${selectedVideoId}?autoplay=1`}
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {selectedPlaylist.videos.map((video) => (
-                <a
-                  key={video.title}
-                  href={video.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <VideoCard video={video} />
-                </a>
-              ))}
+              {selectedPlaylist.videos.map((video) => {
+                const videoId = video.url.split('v=')[1];
+                return (
+                  <VideoCard
+                    key={video.title}
+                    video={video}
+                    onClick={() => setSelectedVideoId(videoId)}
+                  />
+                );
+              })}
             </div>
           </div>
         ) : (
