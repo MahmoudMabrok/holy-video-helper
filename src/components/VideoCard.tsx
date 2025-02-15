@@ -20,7 +20,7 @@ export function VideoCard({ video, onClick, isSelected }: VideoCardProps) {
   };
 
   const videoId = getVideoId(video.url);
-  const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : null;
+  const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/sddefault.jpg` : null;
 
   if (!videoId || !thumbnailUrl) {
     return null;
