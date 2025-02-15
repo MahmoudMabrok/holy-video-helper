@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchContent } from "@/services/api";
 import { SectionCard } from "@/components/SectionCard";
 import { VideoCard } from "@/components/VideoCard";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +12,7 @@ const Index = () => {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const { toast } = useToast();
+  const videoPlayerRef = useRef<HTMLDivElement>(null);
 
   const { data: sections, isLoading, error } = useQuery({
     queryKey: ["content"],
@@ -41,6 +42,17 @@ const Index = () => {
       }
     }
   }, [selectedPlaylistId, sections]);
+
+  // Auto scroll to video player when video changes
+  useEffect(() => {
+    if (selectedVideoId && videoPlayerRef.current) {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+      videoPlayerRef.current.focus();
+    }
+  }, [selectedVideoId]);
 
   const getVideoId = (url: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -92,7 +104,11 @@ const Index = () => {
             </div>
 
             {selectedVideoId && (
-              <div className="w-full aspect-video">
+              <div 
+                ref={videoPlayerRef} 
+                className="w-full aspect-video"
+                tabIndex={-1}
+              >
                 <iframe
                   className="w-full h-full"
                   src={`https://www.youtube.com/embed/${selectedVideoId}`}
