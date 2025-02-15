@@ -2,14 +2,17 @@
 import { Video } from "@/services/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { PlayCircle } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface VideoCardProps {
   video: Video;
   onClick?: () => void;
+  isSelected?: boolean;
 }
 
-export function VideoCard({ video, onClick }: VideoCardProps) {
-  // Extract video ID from URL - handle different YouTube URL formats
+export function VideoCard({ video, onClick, isSelected }: VideoCardProps) {
+  const isMobile = useIsMobile();
+
   const getVideoId = (url: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
@@ -23,8 +26,26 @@ export function VideoCard({ video, onClick }: VideoCardProps) {
     return null;
   }
 
+  if (isMobile) {
+    return (
+      <Card 
+        className={`cursor-pointer ${isSelected ? 'bg-primary/10 border-primary' : ''}`} 
+        onClick={onClick}
+      >
+        <CardContent className="p-3">
+          <h3 className="text-sm font-medium line-clamp-2">{video.title}</h3>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="overflow-hidden transition-all duration-300 hover:scale-105 group" onClick={onClick}>
+    <Card 
+      className={`overflow-hidden transition-all duration-300 hover:scale-105 group cursor-pointer ${
+        isSelected ? 'ring-2 ring-primary' : ''
+      }`} 
+      onClick={onClick}
+    >
       <CardContent className="p-0 relative">
         <div className="aspect-video relative">
           <img

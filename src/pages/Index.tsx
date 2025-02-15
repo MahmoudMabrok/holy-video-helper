@@ -28,7 +28,20 @@ const Index = () => {
     }
   }, [error, toast]);
 
-  // Function to extract video ID from URL
+  // Set first video as default when playlist is selected
+  useEffect(() => {
+    if (selectedPlaylistId && sections) {
+      const playlist = sections.flatMap(s => s.playlists).find(p => p.name === selectedPlaylistId);
+      if (playlist && playlist.videos.length > 0) {
+        const firstVideo = playlist.videos[0];
+        const videoId = getVideoId(firstVideo.url);
+        if (videoId) {
+          setSelectedVideoId(videoId);
+        }
+      }
+    }
+  }, [selectedPlaylistId, sections]);
+
   const getVideoId = (url: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
@@ -57,26 +70,31 @@ const Index = () => {
   const selectedPlaylist = sections.flatMap(s => s.playlists).find(p => p.name === selectedPlaylistId);
 
   return (
-    <div className="min-h-screen bg-background p-6 md:p-8">
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto">
         {selectedPlaylist ? (
-          <div className="space-y-6 animate-fade-in">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                className="group"
-                onClick={() => setSelectedPlaylistId(null)}
-              >
-                <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
-                Back
-              </Button>
-              <h1 className="text-2xl font-semibold">{selectedPlaylist.name}</h1>
+          <div className="animate-fade-in">
+            <div className="sticky top-0 bg-background z-10 p-4 border-b">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  className="group"
+                  onClick={() => {
+                    setSelectedPlaylistId(null);
+                    setSelectedVideoId(null);
+                  }}
+                >
+                  <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
+                  Back
+                </Button>
+                <h1 className="text-2xl font-semibold">{selectedPlaylist.name}</h1>
+              </div>
             </div>
 
             {selectedVideoId && (
-              <div className="w-full aspect-video mb-8">
+              <div className="w-full aspect-video">
                 <iframe
-                  className="w-full h-full rounded-lg shadow-lg"
+                  className="w-full h-full"
                   src={`https://www.youtube.com/embed/${selectedVideoId}`}
                   title="YouTube video player"
                   frameBorder="0"
@@ -86,25 +104,28 @@ const Index = () => {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {selectedPlaylist.videos.map((video) => {
-                return (
-                  <VideoCard
-                    key={video.title}
-                    video={video}
-                    onClick={() => {
-                      const videoId = getVideoId(video.url);
-                      if (videoId) {
-                        setSelectedVideoId(videoId);
-                      }
-                    }}
-                  />
-                );
-              })}
+            <div className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {selectedPlaylist.videos.map((video) => {
+                  const currentVideoId = getVideoId(video.url);
+                  return (
+                    <VideoCard
+                      key={video.title}
+                      video={video}
+                      isSelected={currentVideoId === selectedVideoId}
+                      onClick={() => {
+                        if (currentVideoId) {
+                          setSelectedVideoId(currentVideoId);
+                        }
+                      }}
+                    />
+                  );
+                })}
+              </div>
             </div>
           </div>
         ) : (
-          <div className="grid gap-8">
+          <div className="grid gap-4 p-4">
             {sections.map((section) => (
               <SectionCard
                 key={section.title}
