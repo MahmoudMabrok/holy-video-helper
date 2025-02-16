@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { fetchContent } from "@/services/api";
 import { SectionCard } from "@/components/SectionCard";
@@ -7,6 +6,15 @@ import { useState, useEffect, useRef } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+
+const LAST_VIDEO_KEY = 'last_video';
+const VIDEO_POSITION_KEY = 'video_position';
+
+interface LastVideoState {
+  playlistId: string;
+  videoId: string;
+  position: number;
+}
 
 const Index = () => {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
@@ -20,6 +28,30 @@ const Index = () => {
   });
 
   useEffect(() => {
+    const lastVideoState = localStorage.getItem(LAST_VIDEO_KEY);
+    if (lastVideoState && sections) {
+      try {
+        const { playlistId, videoId } = JSON.parse(lastVideoState) as LastVideoState;
+        setSelectedPlaylistId(playlistId);
+        setSelectedVideoId(videoId);
+      } catch (e) {
+        console.error('Error loading last video state:', e);
+      }
+    }
+  }, [sections]);
+
+  useEffect(() => {
+    if (selectedPlaylistId && selectedVideoId) {
+      const lastVideoState: LastVideoState = {
+        playlistId: selectedPlaylistId,
+        videoId: selectedVideoId,
+        position: 0
+      };
+      localStorage.setItem(LAST_VIDEO_KEY, JSON.stringify(lastVideoState));
+    }
+  }, [selectedPlaylistId, selectedVideoId]);
+
+  useEffect(() => {
     if (error) {
       toast({
         variant: "destructive",
@@ -29,7 +61,6 @@ const Index = () => {
     }
   }, [error, toast]);
 
-  // Set first video as default when playlist is selected
   useEffect(() => {
     if (selectedPlaylistId && sections) {
       const playlist = sections.flatMap(s => s.playlists).find(p => p.name === selectedPlaylistId);
@@ -43,7 +74,6 @@ const Index = () => {
     }
   }, [selectedPlaylistId, sections]);
 
-  // Auto scroll to video player when video changes
   useEffect(() => {
     if (selectedVideoId && videoPlayerRef.current) {
       window.scrollTo({
@@ -141,7 +171,7 @@ const Index = () => {
             </div>
           </div>
         ) : (
-          <div className="grid gap-4 p-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-4">
             {sections.map((section) => (
               <SectionCard
                 key={section.title}
