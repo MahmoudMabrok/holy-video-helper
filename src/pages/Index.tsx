@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
 
 const LAST_VIDEO_KEY = 'last_video';
 const VIDEO_POSITION_KEY = 'video_position';
@@ -16,11 +17,17 @@ interface LastVideoState {
   position: number;
 }
 
+interface VideoProgress {
+  [videoId: string]: number;
+}
+
 const Index = () => {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const [videoProgress, setVideoProgress] = useState<VideoProgress>({});
   const { toast } = useToast();
   const videoPlayerRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<YT.Player | null>(null);
 
   const { data: sections, isLoading, error } = useQuery({
     queryKey: ["content"],
@@ -28,12 +35,24 @@ const Index = () => {
   });
 
   useEffect(() => {
+    const savedProgress = localStorage.getItem('video_progress');
+    if (savedProgress) {
+      setVideoProgress(JSON.parse(savedProgress));
+    }
+
     const lastVideoState = localStorage.getItem(LAST_VIDEO_KEY);
     if (lastVideoState && sections) {
       try {
-        const { playlistId, videoId } = JSON.parse(lastVideoState) as LastVideoState;
+        const { playlistId, videoId, position } = JSON.parse(lastVideoState) as LastVideoState;
         setSelectedPlaylistId(playlistId);
         setSelectedVideoId(videoId);
+
+        if (!window.YT) {
+          const tag = document.createElement('script');
+          tag.src = 'https://www.youtube.com/iframe_api';
+          const firstScriptTag = document.getElementsByTagName('script')[0];
+          firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+        }
       } catch (e) {
         console.error('Error loading last video state:', e);
       }
@@ -45,44 +64,39 @@ const Index = () => {
       const lastVideoState: LastVideoState = {
         playlistId: selectedPlaylistId,
         videoId: selectedVideoId,
-        position: 0
+        position: videoProgress[selectedVideoId] || 0
       };
       localStorage.setItem(LAST_VIDEO_KEY, JSON.stringify(lastVideoState));
     }
-  }, [selectedPlaylistId, selectedVideoId]);
+  }, [selectedPlaylistId, selectedVideoId, videoProgress]);
 
-  useEffect(() => {
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to load content. Please try again later.",
-      });
+  const onPlayerReady = (event: YT.PlayerEvent) => {
+    playerRef.current = event.target;
+    const savedPosition = videoProgress[selectedVideoId!] || 0;
+    if (savedPosition > 0) {
+      event.target.seekTo(savedPosition, true);
     }
-  }, [error, toast]);
+  };
 
-  useEffect(() => {
-    if (selectedPlaylistId && sections) {
-      const playlist = sections.flatMap(s => s.playlists).find(p => p.name === selectedPlaylistId);
-      if (playlist && playlist.videos.length > 0) {
-        const firstVideo = playlist.videos[0];
-        const videoId = getVideoId(firstVideo.url);
-        if (videoId) {
-          setSelectedVideoId(videoId);
+  const onStateChange = (event: YT.OnStateChangeEvent) => {
+    if (event.data === YT.PlayerState.PLAYING) {
+      const trackProgress = setInterval(() => {
+        if (playerRef.current && selectedVideoId) {
+          const currentTime = playerRef.current.getCurrentTime();
+          const duration = playerRef.current.getDuration();
+          const progress = (currentTime / duration) * 100;
+          
+          setVideoProgress(prev => {
+            const newProgress = { ...prev, [selectedVideoId]: currentTime };
+            localStorage.setItem('video_progress', JSON.stringify(newProgress));
+            return newProgress;
+          });
         }
-      }
-    }
-  }, [selectedPlaylistId, sections]);
+      }, 1000);
 
-  useEffect(() => {
-    if (selectedVideoId && videoPlayerRef.current) {
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
-      videoPlayerRef.current.focus();
+      return () => clearInterval(trackProgress);
     }
-  }, [selectedVideoId]);
+  };
 
   const getVideoId = (url: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -109,11 +123,34 @@ const Index = () => {
     );
   }
 
-  const selectedPlaylist = sections.flatMap(s => s.playlists).find(p => p.name === selectedPlaylistId);
+  const selectedPlaylist = sections?.flatMap(s => s.playlists).find(p => p.name === selectedPlaylistId);
+  const lastWatchedVideo = selectedVideoId && !selectedPlaylistId;
 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto">
+        {lastWatchedVideo && (
+          <div className="w-full animate-fade-in">
+            <div className="sticky top-0 bg-background z-10 p-4 border-b">
+              <h2 className="text-xl font-semibold">Continue Watching</h2>
+            </div>
+            <div 
+              ref={videoPlayerRef} 
+              className="w-full aspect-video"
+              tabIndex={-1}
+            >
+              <iframe
+                className="w-full h-full"
+                src={`https://www.youtube.com/embed/${selectedVideoId}?enablejsapi=1&autoplay=1`}
+                title="YouTube video player"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+          </div>
+        )}
+
         {selectedPlaylist ? (
           <div className="animate-fade-in">
             <div className="sticky top-0 bg-background z-10 p-4 border-b">
@@ -141,7 +178,7 @@ const Index = () => {
               >
                 <iframe
                   className="w-full h-full"
-                  src={`https://www.youtube.com/embed/${selectedVideoId}?autoplay=1`}
+                  src={`https://www.youtube.com/embed/${selectedVideoId}?enablejsapi=1&autoplay=1`}
                   title="YouTube video player"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -154,36 +191,49 @@ const Index = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {selectedPlaylist.videos.map((video) => {
                   const currentVideoId = getVideoId(video.url);
+                  const progress = currentVideoId ? videoProgress[currentVideoId] || 0 : 0;
+                  
                   return (
-                    <VideoCard
-                      key={video.title}
-                      video={video}
-                      isSelected={currentVideoId === selectedVideoId}
-                      onClick={() => {
-                        if (currentVideoId) {
-                          setSelectedVideoId(currentVideoId);
-                        }
-                      }}
-                    />
+                    <div key={video.title} className="space-y-2">
+                      <VideoCard
+                        video={video}
+                        isSelected={currentVideoId === selectedVideoId}
+                        onClick={() => {
+                          if (currentVideoId) {
+                            setSelectedVideoId(currentVideoId);
+                          }
+                        }}
+                      />
+                      <Progress value={progress} className="h-1" />
+                    </div>
                   );
                 })}
               </div>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-4">
-            {sections.map((section) => (
-              <SectionCard
-                key={section.title}
-                section={section}
-                onPlaylistClick={setSelectedPlaylistId}
-              />
-            ))}
+          <div className="space-y-8 p-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {sections.map((section) => (
+                <SectionCard
+                  key={section.title}
+                  section={section}
+                  onPlaylistClick={setSelectedPlaylistId}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>
     </div>
   );
+}
+
+declare global {
+  interface Window {
+    YT: any;
+    onYouTubeIframeAPIReady: () => void;
+  }
 }
 
 export default Index;
