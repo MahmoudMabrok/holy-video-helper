@@ -1,10 +1,9 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { fetchContent } from "@/services/api";
 import { SectionCard } from "@/components/SectionCard";
 import { VideoCard } from "@/components/VideoCard";
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Settings } from "lucide-react";
+import { ArrowLeft, Settings, BarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
@@ -89,10 +88,33 @@ const Index = () => {
 
   if (error || !sections) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <h1 className="text-2xl font-semibold text-red-500">Error Loading Content</h1>
-          <p className="text-muted-foreground">Please try refreshing the page.</p>
+      <div className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto">
+          <div className="sticky top-0 bg-background z-10 p-4 border-b flex justify-between items-center">
+            <h1 className="text-2xl font-semibold">Video Library</h1>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate('/statistics')}
+              >
+                <BarChart className="w-5 h-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate('/settings')}
+              >
+                <Settings className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+          <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 73px)' }}>
+            <div className="text-center space-y-4">
+              <h1 className="text-2xl font-semibold text-red-500">Error Loading Content</h1>
+              <p className="text-muted-foreground">Please try refreshing the page.</p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -106,13 +128,22 @@ const Index = () => {
       <div className="max-w-7xl mx-auto">
         <div className="sticky top-0 bg-background z-10 p-4 border-b flex justify-between items-center">
           <h1 className="text-2xl font-semibold">Video Library</h1>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/settings')}
-          >
-            <Settings className="w-5 h-5" />
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/statistics')}
+            >
+              <BarChart className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/settings')}
+            >
+              <Settings className="w-5 h-5" />
+            </Button>
+          </div>
         </div>
 
         {lastWatchedVideo && (

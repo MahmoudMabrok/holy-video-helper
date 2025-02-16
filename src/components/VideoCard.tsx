@@ -32,7 +32,9 @@ export function VideoCard({ video, onClick, isSelected, progress = 0 }: VideoCar
   if (isMobile) {
     return (
       <Card 
-        className={`cursor-pointer ${isSelected ? 'bg-primary/10 border-primary' : ''}`} 
+        className={`cursor-pointer transition-all duration-300 ${
+          isSelected ? 'bg-primary/20 border-primary shadow-lg' : ''
+        }`} 
         onClick={onClick}
       >
         <CardContent className="p-3 space-y-2">
@@ -49,7 +51,7 @@ export function VideoCard({ video, onClick, isSelected, progress = 0 }: VideoCar
   return (
     <Card 
       className={`overflow-hidden transition-all duration-300 hover:scale-105 group cursor-pointer ${
-        isSelected ? 'ring-2 ring-primary shadow-lg scale-105' : ''
+        isSelected ? 'bg-primary/20 border-primary shadow-lg scale-105' : ''
       }`} 
       onClick={onClick}
     >
