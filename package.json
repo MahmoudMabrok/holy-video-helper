@@ -1,6 +1,7 @@
 {
   "name": "ramadans_app",
   "private": false,
+  "homepage": "https://mahmoudmabrok.github.io/holy-video-helper/",
   "version": "0.0.0",
   "type": "module",
   "scripts": {
