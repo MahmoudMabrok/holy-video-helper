@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { fetchContent } from "@/services/api";
 import { SectionCard } from "@/components/SectionCard";
@@ -29,6 +30,7 @@ const Index = () => {
   const [videoProgress, setVideoProgress] = useState<VideoProgress>({});
   const { toast } = useToast();
   const videoPlayerRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<any>(null);
 
   const { data: sections, isLoading, error } = useQuery({
     queryKey: ["content"],
@@ -71,34 +73,6 @@ const Index = () => {
     }
   }, [selectedPlaylistId, selectedVideoId, videoProgress]);
 
-  const onPlayerReady = (event: YT.PlayerEvent) => {
-    playerRef.current = event.target;
-    const savedPosition = videoProgress[selectedVideoId!] || 0;
-    if (savedPosition > 0) {
-      event.target.seekTo(savedPosition, true);
-    }
-  };
-
-  const onStateChange = (event: YT.OnStateChangeEvent) => {
-    if (event.data === YT.PlayerState.PLAYING) {
-      const trackProgress = setInterval(() => {
-        if (playerRef.current && selectedVideoId) {
-          const currentTime = playerRef.current.getCurrentTime();
-          const duration = playerRef.current.getDuration();
-          const progress = (currentTime / duration) * 100;
-          
-          setVideoProgress(prev => {
-            const newProgress = { ...prev, [selectedVideoId]: currentTime };
-            localStorage.setItem('video_progress', JSON.stringify(newProgress));
-            return newProgress;
-          });
-        }
-      }, 1000);
-
-      return () => clearInterval(trackProgress);
-    }
-  };
-
   const getVideoId = (url: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
@@ -125,6 +99,7 @@ const Index = () => {
   }
 
   const selectedPlaylist = sections?.flatMap(s => s.playlists).find(p => p.name === selectedPlaylistId);
+  const lastWatchedVideo = selectedVideoId && !selectedPlaylistId;
 
   return (
     <div className="min-h-screen bg-background">
@@ -139,6 +114,25 @@ const Index = () => {
             <Settings className="w-5 h-5" />
           </Button>
         </div>
+
+        {lastWatchedVideo && (
+          <div className="w-full animate-fade-in">
+            <div 
+              ref={videoPlayerRef} 
+              className="w-full aspect-video"
+              tabIndex={-1}
+            >
+              <iframe
+                className="w-full h-full"
+                src={`https://www.youtube.com/embed/${selectedVideoId}?enablejsapi=1&autoplay=1`}
+                title="YouTube video player"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+          </div>
+        )}
 
         {selectedPlaylist ? (
           <div className="animate-fade-in">
@@ -180,21 +174,20 @@ const Index = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {selectedPlaylist.videos.map((video) => {
                   const currentVideoId = getVideoId(video.url);
-                  const progress = currentVideoId ? videoProgress[currentVideoId] || 0 : 0;
+                  const progress = currentVideoId ? (videoProgress[currentVideoId] || 0) : 0;
                   
                   return (
-                    <div key={video.title} className="space-y-2">
-                      <VideoCard
-                        video={video}
-                        isSelected={currentVideoId === selectedVideoId}
-                        onClick={() => {
-                          if (currentVideoId) {
-                            setSelectedVideoId(currentVideoId);
-                          }
-                        }}
-                      />
-                      <Progress value={progress} className="h-1" />
-                    </div>
+                    <VideoCard
+                      key={video.title}
+                      video={video}
+                      isSelected={currentVideoId === selectedVideoId}
+                      progress={progress}
+                      onClick={() => {
+                        if (currentVideoId) {
+                          setSelectedVideoId(currentVideoId);
+                        }
+                      }}
+                    />
                   );
                 })}
               </div>
