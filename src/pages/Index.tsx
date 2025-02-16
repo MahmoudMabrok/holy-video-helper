@@ -3,10 +3,11 @@ import { fetchContent } from "@/services/api";
 import { SectionCard } from "@/components/SectionCard";
 import { VideoCard } from "@/components/VideoCard";
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
+import { useNavigate } from "react-router-dom";
 
 const LAST_VIDEO_KEY = 'last_video';
 const VIDEO_POSITION_KEY = 'video_position';
@@ -22,12 +23,12 @@ interface VideoProgress {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [videoProgress, setVideoProgress] = useState<VideoProgress>({});
   const { toast } = useToast();
   const videoPlayerRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<YT.Player | null>(null);
 
   const { data: sections, isLoading, error } = useQuery({
     queryKey: ["content"],
@@ -124,32 +125,20 @@ const Index = () => {
   }
 
   const selectedPlaylist = sections?.flatMap(s => s.playlists).find(p => p.name === selectedPlaylistId);
-  const lastWatchedVideo = selectedVideoId && !selectedPlaylistId;
 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto">
-        {lastWatchedVideo && (
-          <div className="w-full animate-fade-in">
-            <div className="sticky top-0 bg-background z-10 p-4 border-b">
-              <h2 className="text-xl font-semibold">Continue Watching</h2>
-            </div>
-            <div 
-              ref={videoPlayerRef} 
-              className="w-full aspect-video"
-              tabIndex={-1}
-            >
-              <iframe
-                className="w-full h-full"
-                src={`https://www.youtube.com/embed/${selectedVideoId}?enablejsapi=1&autoplay=1`}
-                title="YouTube video player"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
-            </div>
-          </div>
-        )}
+        <div className="sticky top-0 bg-background z-10 p-4 border-b flex justify-between items-center">
+          <h1 className="text-2xl font-semibold">Video Library</h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/settings')}
+          >
+            <Settings className="w-5 h-5" />
+          </Button>
+        </div>
 
         {selectedPlaylist ? (
           <div className="animate-fade-in">

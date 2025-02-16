@@ -1,3 +1,4 @@
+
 export interface Video {
   title: string;
   url: string;
@@ -22,10 +23,10 @@ export interface ApiItem {
 
 export async function fetchContent(): Promise<Section[]> {
   try {
-    const response = await fetch(
-      "https://raw.githubusercontent.com/MahmoudMabrok/MyDataCenter/main/ramadan.json"
-    );
-  
+    const dataUrl = localStorage.getItem('data_url') || 
+      "https://raw.githubusercontent.com/MahmoudMabrok/MyDataCenter/main/ramadan.json";
+
+    const response = await fetch(dataUrl);
 
     if (!response.ok) throw new Error("Failed to fetch content");
     const data = await response.json();
@@ -67,7 +68,6 @@ export async function fetchContent(): Promise<Section[]> {
       []
     );
 
-    console.log("sections:", sections);
     return sections;
   } catch (error) {
     console.error("Error fetching content:", error);
