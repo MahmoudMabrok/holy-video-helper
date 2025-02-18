@@ -23,8 +23,8 @@ export default function Statistics() {
     const today = new Date().toLocaleDateString();
     const stats: DailyStats[] = [{
       date: today,
-      minutes: Object.values(progressData).reduce((acc: number, seconds: number) => 
-        acc + Math.round(Number(seconds) / 60), 0
+      minutes: Object.values(progressData).reduce((acc: number, seconds: any) => 
+        acc + Math.round(Number(seconds || 0) / 60), 0
       )
     }];
 

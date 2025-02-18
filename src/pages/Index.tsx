@@ -48,29 +48,60 @@ const Index = () => {
         const { playlistId, videoId, position } = JSON.parse(lastVideoState) as LastVideoState;
         setSelectedPlaylistId(playlistId);
         setSelectedVideoId(videoId);
-
-        if (!window.YT) {
-          const tag = document.createElement('script');
-          tag.src = 'https://www.youtube.com/iframe_api';
-          const firstScriptTag = document.getElementsByTagName('script')[0];
-          firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
-        }
       } catch (e) {
         console.error('Error loading last video state:', e);
       }
     }
+
+    if (!window.YT) {
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+
+      window.onYouTubeIframeAPIReady = initializePlayer;
+    } else {
+      initializePlayer();
+    }
   }, [sections]);
 
-  useEffect(() => {
-    if (selectedPlaylistId && selectedVideoId) {
-      const lastVideoState: LastVideoState = {
-        playlistId: selectedPlaylistId,
-        videoId: selectedVideoId,
-        position: videoProgress[selectedVideoId] || 0
-      };
-      localStorage.setItem(LAST_VIDEO_KEY, JSON.stringify(lastVideoState));
+  const initializePlayer = () => {
+    if (!selectedVideoId || !videoPlayerRef.current) return;
+
+    if (playerRef.current) {
+      playerRef.current.destroy();
     }
-  }, [selectedPlaylistId, selectedVideoId, videoProgress]);
+
+    playerRef.current = new window.YT.Player(videoPlayerRef.current.firstChild, {
+      events: {
+        onStateChange: onPlayerStateChange,
+      },
+    });
+  };
+
+  useEffect(() => {
+    if (selectedVideoId) {
+      initializePlayer();
+    }
+  }, [selectedVideoId]);
+
+  const onPlayerStateChange = (event: any) => {
+    if (!selectedVideoId) return;
+
+    if (event.data === window.YT.PlayerState.PLAYING) {
+      const updateInterval = setInterval(() => {
+        if (playerRef.current && playerRef.current.getCurrentTime) {
+          const currentTime = playerRef.current.getCurrentTime();
+          const newProgress = { ...videoProgress };
+          newProgress[selectedVideoId] = currentTime;
+          setVideoProgress(newProgress);
+          localStorage.setItem('video_progress', JSON.stringify(newProgress));
+        }
+      }, 1000);
+
+      return () => clearInterval(updateInterval);
+    }
+  };
 
   const getVideoId = (url: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
