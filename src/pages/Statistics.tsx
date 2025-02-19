@@ -19,12 +19,13 @@ export default function Statistics() {
     const videoProgress = localStorage.getItem('video_progress');
     const progressData = videoProgress ? JSON.parse(videoProgress) : {};
 
-    // Calculate daily minutes
+    // Calculate daily minutes from seconds
     const today = new Date().toLocaleDateString();
     const stats: DailyStats[] = [{
       date: today,
-      minutes: Object.values(progressData).reduce((acc: number, seconds: any) => 
-        acc + Math.round(Number(seconds || 0) / 60), 0
+      minutes: Math.round(
+        Object.values(progressData)
+          .reduce((acc: number, seconds: number) => acc + seconds, 0) / 60
       )
     }];
 
