@@ -2,12 +2,19 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchContent } from "@/services/api";
 import { SectionCard } from "@/components/SectionCard";
 import { VideoCard } from "@/components/VideoCard";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Settings, BarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
+
+declare global {
+  interface Window {
+    YT: any;
+    onYouTubeIframeAPIReady: () => void;
+  }
+}
 
 const LAST_VIDEO_KEY = 'last_video';
 const VIDEO_PROGRESS_KEY = 'video_progress';
@@ -28,6 +35,9 @@ const Index = () => {
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [videoProgress, setVideoProgress] = useState<VideoProgress>({});
   const { toast } = useToast();
+  const playerRef = useRef<any>(null);
+  const videoPlayerRef = useRef<HTMLDivElement>(null);
+  const progressIntervalRef = useRef<number | null>(null);
 
   const { data: sections, isLoading, error } = useQuery({
     queryKey: ["content"],
@@ -50,32 +60,61 @@ const Index = () => {
         console.error('Error loading last video state:', e);
       }
     }
+
+    if (!window.YT) {
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+      window.onYouTubeIframeAPIReady = initializePlayer;
+    } else {
+      initializePlayer();
+    }
+
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
   }, [sections]);
+
+  const initializePlayer = () => {
+    if (!selectedVideoId) return;
+
+    playerRef.current = new window.YT.Player(`youtube-player-${selectedVideoId}`, {
+      events: {
+        onStateChange: onPlayerStateChange,
+      },
+    });
+  };
 
   useEffect(() => {
     if (selectedVideoId) {
-      const newProgress = { ...videoProgress };
-      
-      const interval = setInterval(() => {
-        newProgress[selectedVideoId] = (newProgress[selectedVideoId] || 0) + 1;
-        setVideoProgress(newProgress);
-        localStorage.setItem(VIDEO_PROGRESS_KEY, JSON.stringify(newProgress));
+      if (window.YT) {
+        initializePlayer();
+      }
+    }
+  }, [selectedVideoId]);
+
+  const onPlayerStateChange = (event: any) => {
+    if (!selectedVideoId) return;
+
+    if (event.data === window.YT.PlayerState.PLAYING) {
+      progressIntervalRef.current = window.setInterval(() => {
+        if (playerRef.current && playerRef.current.getCurrentTime) {
+          const currentTime = Math.floor(playerRef.current.getCurrentTime());
+          const newProgress = { ...videoProgress };
+          newProgress[selectedVideoId] = currentTime;
+          setVideoProgress(newProgress);
+          localStorage.setItem(VIDEO_PROGRESS_KEY, JSON.stringify(newProgress));
+        }
       }, 1000);
-
-      return () => clearInterval(interval);
+    } else {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
     }
-  }, [selectedVideoId, videoProgress]);
-
-  useEffect(() => {
-    if (selectedPlaylistId && selectedVideoId) {
-      const lastVideoState: LastVideoState = {
-        playlistId: selectedPlaylistId,
-        videoId: selectedVideoId,
-        position: videoProgress[selectedVideoId] || 0
-      };
-      localStorage.setItem(LAST_VIDEO_KEY, JSON.stringify(lastVideoState));
-    }
-  }, [selectedPlaylistId, selectedVideoId, videoProgress]);
+  };
 
   const getVideoId = (url: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -154,14 +193,16 @@ const Index = () => {
         {lastWatchedVideo && (
           <div className="w-full animate-fade-in">
             <div className="w-full aspect-video">
-              <iframe
-                className="w-full h-full"
-                src={`https://www.youtube.com/embed/${selectedVideoId}?autoplay=1`}
-                title="YouTube video player"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
+              <div id={`youtube-player-${selectedVideoId}`}>
+                <iframe
+                  className="w-full h-full"
+                  src={`https://www.youtube.com/embed/${selectedVideoId}?enablejsapi=1`}
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              </div>
             </div>
           </div>
         )}
@@ -187,14 +228,16 @@ const Index = () => {
 
             {selectedVideoId && (
               <div className="w-full aspect-video">
-                <iframe
-                  className="w-full h-full"
-                  src={`https://www.youtube.com/embed/${selectedVideoId}?autoplay=1`}
-                  title="YouTube video player"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                ></iframe>
+                <div id={`youtube-player-${selectedVideoId}`}>
+                  <iframe
+                    className="w-full h-full"
+                    src={`https://www.youtube.com/embed/${selectedVideoId}?enablejsapi=1`}
+                    title="YouTube video player"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                </div>
               </div>
             )}
 

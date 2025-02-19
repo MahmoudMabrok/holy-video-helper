@@ -21,12 +21,13 @@ export default function Statistics() {
 
     // Calculate daily minutes from seconds
     const today = new Date().toLocaleDateString();
+    const totalSeconds = Object.values(progressData).reduce((acc: number, seconds: any) => {
+      return acc + (typeof seconds === 'number' ? seconds : 0);
+    }, 0);
+
     const stats: DailyStats[] = [{
       date: today,
-      minutes: Math.round(
-        Object.values(progressData)
-          .reduce((acc: number, seconds: number) => acc + seconds, 0) / 60
-      )
+      minutes: Math.round(totalSeconds / 60)
     }];
 
     setDailyStats(stats);
