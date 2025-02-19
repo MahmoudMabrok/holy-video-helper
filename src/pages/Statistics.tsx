@@ -10,18 +10,21 @@ interface DailyStats {
   minutes: number;
 }
 
+interface VideoProgress {
+  [key: string]: number;
+}
+
 export default function Statistics() {
   const navigate = useNavigate();
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
 
   useEffect(() => {
     const videoProgress = localStorage.getItem('video_progress');
-    const progressData = videoProgress ? JSON.parse(videoProgress) : {};
+    const progressData: VideoProgress = videoProgress ? JSON.parse(videoProgress) : {};
 
     const today = new Date().toLocaleDateString();
-    const totalMinutes = Object.values(progressData).reduce((acc: number, seconds: any) => {
-      const secondsNum = typeof seconds === 'number' ? seconds : 0;
-      return acc + Math.floor(secondsNum / 60);
+    const totalMinutes = Object.values(progressData).reduce((acc, seconds) => {
+      return acc + Math.floor(seconds / 60);
     }, 0);
 
     const stats: DailyStats[] = [{
