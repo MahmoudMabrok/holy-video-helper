@@ -1,20 +1,11 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { fetchContent } from "@/services/api";
 import { SectionCard } from "@/components/SectionCard";
-import { VideoCard } from "@/components/VideoCard";
-import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Settings, BarChart } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { Progress } from "@/components/ui/progress";
-import { useNavigate } from "react-router-dom";
-
-declare global {
-  interface Window {
-    YT: any;
-    onYouTubeIframeAPIReady: () => void;
-  }
-}
+import { useState, useEffect } from "react";
+import { VideoPlayer } from "@/components/VideoPlayer";
+import { Header } from "@/components/Header";
+import { PlaylistView } from "@/components/PlaylistView";
 
 const LAST_VIDEO_KEY = 'last_video';
 const VIDEO_PROGRESS_KEY = 'video_progress';
@@ -30,14 +21,9 @@ interface VideoProgress {
 }
 
 const Index = () => {
-  const navigate = useNavigate();
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [videoProgress, setVideoProgress] = useState<VideoProgress>({});
-  const { toast } = useToast();
-  const playerRef = useRef<any>(null);
-  const videoPlayerRef = useRef<HTMLDivElement>(null);
-  const progressIntervalRef = useRef<number | null>(null);
 
   const { data: sections, isLoading, error } = useQuery({
     queryKey: ["content"],
@@ -60,66 +46,13 @@ const Index = () => {
         console.error('Error loading last video state:', e);
       }
     }
-
-    if (!window.YT) {
-      const tag = document.createElement('script');
-      tag.src = 'https://www.youtube.com/iframe_api';
-      const firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
-      window.onYouTubeIframeAPIReady = initializePlayer;
-    } else {
-      initializePlayer();
-    }
-
-    return () => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-    };
   }, [sections]);
 
-  const initializePlayer = () => {
-    if (!selectedVideoId) return;
-
-    playerRef.current = new window.YT.Player(`youtube-player-${selectedVideoId}`, {
-      events: {
-        onStateChange: onPlayerStateChange,
-      },
-    });
-  };
-
-  useEffect(() => {
-    if (selectedVideoId) {
-      if (window.YT) {
-        initializePlayer();
-      }
-    }
-  }, [selectedVideoId]);
-
-  const onPlayerStateChange = (event: any) => {
-    if (!selectedVideoId) return;
-
-    if (event.data === window.YT.PlayerState.PLAYING) {
-      progressIntervalRef.current = window.setInterval(() => {
-        if (playerRef.current && playerRef.current.getCurrentTime) {
-          const currentTime = Math.floor(playerRef.current.getCurrentTime());
-          const newProgress = { ...videoProgress };
-          newProgress[selectedVideoId] = currentTime;
-          setVideoProgress(newProgress);
-          localStorage.setItem(VIDEO_PROGRESS_KEY, JSON.stringify(newProgress));
-        }
-      }, 1000);
-    } else {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-    }
-  };
-
-  const getVideoId = (url: string) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return match && match[2].length === 11 ? match[2] : null;
+  const handleProgressChange = (videoId: string, seconds: number) => {
+    const newProgress = { ...videoProgress };
+    newProgress[videoId] = seconds;
+    setVideoProgress(newProgress);
+    localStorage.setItem(VIDEO_PROGRESS_KEY, JSON.stringify(newProgress));
   };
 
   if (isLoading) {
@@ -134,25 +67,7 @@ const Index = () => {
     return (
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto">
-          <div className="sticky top-0 bg-background z-10 p-4 border-b flex justify-between items-center">
-            <h1 className="text-2xl font-semibold">Video Library</h1>
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/statistics')}
-              >
-                <BarChart className="w-5 h-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/settings')}
-              >
-                <Settings className="w-5 h-5" />
-              </Button>
-            </div>
-          </div>
+          <Header />
           <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 73px)' }}>
             <div className="text-center space-y-4">
               <h1 className="text-2xl font-semibold text-red-500">Error Loading Content</h1>
@@ -170,100 +85,29 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto">
-        <div className="sticky top-0 bg-background z-10 p-4 border-b flex justify-between items-center">
-          <h1 className="text-2xl font-semibold">Video Library</h1>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate('/statistics')}
-            >
-              <BarChart className="w-5 h-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate('/settings')}
-            >
-              <Settings className="w-5 h-5" />
-            </Button>
-          </div>
-        </div>
+        <Header />
 
         {lastWatchedVideo && (
           <div className="w-full animate-fade-in">
-            <div className="w-full aspect-video">
-              <div id={`youtube-player-${selectedVideoId}`}>
-                <iframe
-                  className="w-full h-full"
-                  src={`https://www.youtube.com/embed/${selectedVideoId}?enablejsapi=1`}
-                  title="YouTube video player"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                ></iframe>
-              </div>
-            </div>
+            <VideoPlayer 
+              videoId={selectedVideoId}
+              onProgressChange={(seconds) => handleProgressChange(selectedVideoId, seconds)}
+            />
           </div>
         )}
 
         {selectedPlaylist ? (
-          <div className="animate-fade-in">
-            <div className="sticky top-0 bg-background z-10 p-4 border-b">
-              <div className="flex items.center gap-4">
-                <Button
-                  variant="ghost"
-                  className="group"
-                  onClick={() => {
-                    setSelectedPlaylistId(null);
-                    setSelectedVideoId(null);
-                  }}
-                >
-                  <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
-                  Back
-                </Button>
-                <h1 className="text-2xl font-semibold">{selectedPlaylist.name}</h1>
-              </div>
-            </div>
-
-            {selectedVideoId && (
-              <div className="w-full aspect-video">
-                <div id={`youtube-player-${selectedVideoId}`}>
-                  <iframe
-                    className="w-full h-full"
-                    src={`https://www.youtube.com/embed/${selectedVideoId}?enablejsapi=1`}
-                    title="YouTube video player"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  ></iframe>
-                </div>
-              </div>
-            )}
-
-            <div className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {selectedPlaylist.videos.map((video) => {
-                  const currentVideoId = getVideoId(video.url);
-                  const progress = currentVideoId ? (videoProgress[currentVideoId] || 0) : 0;
-                  
-                  return (
-                    <VideoCard
-                      key={video.title}
-                      video={video}
-                      isSelected={currentVideoId === selectedVideoId}
-                      progress={progress / 60}
-                      onClick={() => {
-                        if (currentVideoId) {
-                          setSelectedVideoId(currentVideoId);
-                        }
-                      }}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+          <PlaylistView
+            playlist={selectedPlaylist}
+            selectedVideoId={selectedVideoId}
+            videoProgress={videoProgress}
+            onBack={() => {
+              setSelectedPlaylistId(null);
+              setSelectedVideoId(null);
+            }}
+            onVideoSelect={setSelectedVideoId}
+            onProgressChange={handleProgressChange}
+          />
         ) : (
           <div className="space-y-8 p-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

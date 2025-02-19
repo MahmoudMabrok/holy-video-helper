@@ -15,19 +15,18 @@ export default function Statistics() {
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
 
   useEffect(() => {
-    // Get video progress from localStorage
     const videoProgress = localStorage.getItem('video_progress');
     const progressData = videoProgress ? JSON.parse(videoProgress) : {};
 
-    // Calculate daily minutes from seconds
     const today = new Date().toLocaleDateString();
-    const totalSeconds = Object.values(progressData).reduce((acc: number, seconds: any) => {
-      return acc + (typeof seconds === 'number' ? seconds : 0);
+    const totalMinutes = Object.values(progressData).reduce((acc: number, seconds: any) => {
+      const secondsNum = typeof seconds === 'number' ? seconds : 0;
+      return acc + Math.floor(secondsNum / 60);
     }, 0);
 
     const stats: DailyStats[] = [{
       date: today,
-      minutes: Math.round(totalSeconds / 60)
+      minutes: totalMinutes
     }];
 
     setDailyStats(stats);
