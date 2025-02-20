@@ -46,6 +46,8 @@ export function VideoPlayer({ videoId, onProgressChange }: VideoPlayerProps) {
         modestbranding: 1,
         rel: 0,
       },
+      height: '100%',
+      width: '100%',
       events: {
         onStateChange: onPlayerStateChange,
       },
@@ -70,8 +72,8 @@ export function VideoPlayer({ videoId, onProgressChange }: VideoPlayerProps) {
   };
 
   return (
-    <div className="w-full aspect-video">
-      <div id={`youtube-player-${videoId}`}></div>
+    <div className="w-full aspect-video bg-black relative">
+      <div id={`youtube-player-${videoId}`} className="absolute inset-0" />
     </div>
   );
 }
