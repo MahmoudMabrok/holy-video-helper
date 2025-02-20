@@ -88,7 +88,7 @@ const Index = () => {
         <Header />
 
         {lastWatchedVideo && (
-          <div className="w-full animate-fade-in">
+          <div className="w-full p-4 animate-fade-in">
             <VideoPlayer 
               videoId={selectedVideoId}
               onProgressChange={(seconds) => handleProgressChange(selectedVideoId, seconds)}

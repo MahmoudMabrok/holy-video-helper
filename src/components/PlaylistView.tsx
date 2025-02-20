@@ -29,8 +29,8 @@ export function PlaylistView({
   onProgressChange
 }: PlaylistViewProps) {
   return (
-    <div className="animate-fade-in">
-      <div className="sticky top-0 bg-background z-10 p-4 border-b">
+    <div className="animate-fade-in space-y-4">
+      <div className="sticky top-[73px] bg-background z-10 p-4 border-b">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -45,29 +45,27 @@ export function PlaylistView({
       </div>
 
       {selectedVideoId && (
-        <VideoPlayer 
-          videoId={selectedVideoId}
-          onProgressChange={(seconds) => onProgressChange(selectedVideoId, seconds)}
-        />
+        <div className="w-full px-4">
+          <VideoPlayer 
+            videoId={selectedVideoId}
+            onProgressChange={(seconds) => onProgressChange(selectedVideoId, seconds)}
+          />
+        </div>
       )}
 
       <div className="p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {playlist.videos.map((video: Video) => {
-            const currentVideoId = getVideoId(video.url);
-            const progress = currentVideoId ? (videoProgress[currentVideoId] || 0) : 0;
+            const videoId = getVideoId(video.url);
+            if (!videoId) return null;
             
             return (
               <VideoCard
                 key={video.title}
                 video={video}
-                isSelected={currentVideoId === selectedVideoId}
-                progress={progress / 60}
-                onClick={() => {
-                  if (currentVideoId) {
-                    onVideoSelect(currentVideoId);
-                  }
-                }}
+                isSelected={videoId === selectedVideoId}
+                progress={videoProgress[videoId] ? Math.floor(videoProgress[videoId] / 60) : 0}
+                onClick={() => onVideoSelect(videoId)}
               />
             );
           })}

@@ -39,6 +39,13 @@ export function VideoPlayer({ videoId, onProgressChange }: VideoPlayerProps) {
     if (!videoId) return;
 
     playerRef.current = new window.YT.Player(`youtube-player-${videoId}`, {
+      videoId: videoId,
+      playerVars: {
+        autoplay: 0,
+        controls: 1,
+        modestbranding: 1,
+        rel: 0,
+      },
       events: {
         onStateChange: onPlayerStateChange,
       },
@@ -64,16 +71,7 @@ export function VideoPlayer({ videoId, onProgressChange }: VideoPlayerProps) {
 
   return (
     <div className="w-full aspect-video">
-      <div id={`youtube-player-${videoId}`}>
-        <iframe
-          className="w-full h-full"
-          src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1`}
-          title="YouTube video player"
-          frameBorder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        ></iframe>
-      </div>
+      <div id={`youtube-player-${videoId}`}></div>
     </div>
   );
 }
