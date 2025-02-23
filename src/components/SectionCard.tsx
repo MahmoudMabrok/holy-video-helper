@@ -30,7 +30,7 @@ export function SectionCard({ section, onPlaylistClick }: SectionCardProps) {
           <ScrollArea className="w-full">
             <div className="flex space-x-3 pb-2">
               {section.playlists.map((playlist) => {
-                const thumbnail = playlist.thunmbnail;
+                const thumbnail = getFirstVideoThumbnail(playlist.videos[0]?.url);
                 return (
                   <div
                     key={playlist.name}
@@ -63,13 +63,13 @@ export function SectionCard({ section, onPlaylistClick }: SectionCardProps) {
   }
 
   return (
-    <Card className="animate-fade-up">
+    <Card className="animate-fade-up w-full">
       <CardHeader className="pb-2">
         <CardTitle>{section.title}</CardTitle>
       </CardHeader>
       <CardContent className="pt-2">
         <ScrollArea className="max-h-[80vh]">
-          <div className="grid grid-cols-2 gap-3 pr-3">
+          <div className="grid grid-cols-3 gap-4 pr-4">
             {section.playlists.map((playlist) => (
               <PlaylistCard
                 key={playlist.name}

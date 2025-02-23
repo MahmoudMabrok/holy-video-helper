@@ -66,13 +66,11 @@ const Index = () => {
   if (error || !sections) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="max-w-7xl mx-auto">
-          <Header />
-          <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 73px)' }}>
-            <div className="text-center space-y-4">
-              <h1 className="text-2xl font-semibold text-red-500">Error Loading Content</h1>
-              <p className="text-muted-foreground">Please try refreshing the page.</p>
-            </div>
+        <Header />
+        <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 73px)' }}>
+          <div className="text-center space-y-4">
+            <h1 className="text-2xl font-semibold text-red-500">Error Loading Content</h1>
+            <p className="text-muted-foreground">Please try refreshing the page.</p>
           </div>
         </div>
       </div>
@@ -84,9 +82,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto">
-        <Header />
-
+      <Header />
+      <div className="container mx-auto px-4">
         {lastWatchedVideo && (
           <div className="w-full p-4 animate-fade-in">
             <VideoPlayer 
@@ -109,16 +106,14 @@ const Index = () => {
             onProgressChange={handleProgressChange}
           />
         ) : (
-          <div className="space-y-8 p-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {sections.map((section) => (
-                <SectionCard
-                  key={section.title}
-                  section={section}
-                  onPlaylistClick={setSelectedPlaylistId}
-                />
-              ))}
-            </div>
+          <div className="space-y-8 py-4">
+            {sections.map((section) => (
+              <SectionCard
+                key={section.title}
+                section={section}
+                onPlaylistClick={setSelectedPlaylistId}
+              />
+            ))}
           </div>
         )}
       </div>
