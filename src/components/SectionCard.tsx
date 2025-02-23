@@ -27,36 +27,33 @@ export function SectionCard({ section, onPlaylistClick }: SectionCardProps) {
           <CardTitle>{section.title}</CardTitle>
         </CardHeader>
         <CardContent className="pt-2">
-          <ScrollArea className="w-full">
-            <div className="flex space-x-3 pb-2">
-              {section.playlists.map((playlist) => {
-                const thumbnail = getFirstVideoThumbnail(playlist.videos[0]?.url);
-                return (
-                  <div
-                    key={playlist.name}
-                    className="flex-none w-[260px]"
-                    onClick={() => onPlaylistClick(playlist.name)}
-                  >
-                    <Card className="overflow-hidden cursor-pointer hover:scale-105 transition-transform">
-                      <div className="aspect-video relative">
-                        <img
-                          src={thumbnail || '/placeholder.svg'}
-                          alt={playlist.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <CardContent className="p-3">
-                        <h3 className="font-medium line-clamp-1">{playlist.name}</h3>
-                        <p className="text-sm text-muted-foreground mt-0.5">
-                          {playlist.videos.length} videos
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </div>
-                );
-              })}
-            </div>
-          </ScrollArea>
+          <div className="grid grid-cols-2 gap-2">
+            {section.playlists.map((playlist) => {
+              const thumbnail = getFirstVideoThumbnail(playlist.videos[0]?.url);
+              return (
+                <div
+                  key={playlist.name}
+                  onClick={() => onPlaylistClick(playlist.name)}
+                >
+                  <Card className="overflow-hidden cursor-pointer hover:scale-105 transition-transform">
+                    <div className="aspect-video relative">
+                      <img
+                        src={thumbnail || '/placeholder.svg'}
+                        alt={playlist.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <CardContent className="p-2">
+                      <h3 className="font-medium text-sm line-clamp-1">{playlist.name}</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {playlist.videos.length} videos
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
     );
