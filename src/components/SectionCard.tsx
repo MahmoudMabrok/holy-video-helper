@@ -68,7 +68,7 @@ export function SectionCard({ section, onPlaylistClick }: SectionCardProps) {
         <CardTitle>{section.title}</CardTitle>
       </CardHeader>
       <CardContent className="pt-2">
-        <ScrollArea className="h-[360px]">
+        <ScrollArea className="max-h-[80vh]">
           <div className="grid grid-cols-2 gap-3 pr-3">
             {section.playlists.map((playlist) => (
               <PlaylistCard
