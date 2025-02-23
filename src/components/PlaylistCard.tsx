@@ -1,27 +1,42 @@
 
 import { Playlist } from "@/services/api";
 import { Card, CardContent } from "@/components/ui/card";
-import { PlaySquare } from "lucide-react";
 
 interface PlaylistCardProps {
   playlist: Playlist;
   onClick: () => void;
 }
 
+const getFirstVideoThumbnail = (url: string | undefined) => {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return match && match[2].length === 11 ? `https://img.youtube.com/vi/${match[2]}/mqdefault.jpg` : null;
+};
+
 export function PlaylistCard({ playlist, onClick }: PlaylistCardProps) {
+  const thumbnail = getFirstVideoThumbnail(playlist.videos[0]?.url);
+
   return (
     <Card 
-      className="cursor-pointer transition-all duration-300 hover:scale-105 group"
+      className="cursor-pointer transition-all duration-300 hover:scale-105 group overflow-hidden"
       onClick={onClick}
     >
-      <CardContent className="p-6 flex items-center gap-4">
-        <PlaySquare className="w-8 h-8 text-primary shrink-0" />
-        <div className="flex-1">
-          <h3 className="font-medium line-clamp-1">{playlist.name}</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            {playlist.videos.length} videos
-          </p>
+      <div className="aspect-video relative">
+        <img
+          src={thumbnail || '/placeholder.svg'}
+          alt={playlist.name}
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <div className="text-white font-medium">Play Playlist</div>
         </div>
+      </div>
+      <CardContent className="p-4">
+        <h3 className="font-medium line-clamp-1">{playlist.name}</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          {playlist.videos.length} videos
+        </p>
       </CardContent>
     </Card>
   );
