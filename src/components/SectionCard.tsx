@@ -30,7 +30,7 @@ export function SectionCard({ section, onPlaylistClick }: SectionCardProps) {
           <ScrollArea className="w-full">
             <div className="flex space-x-3 pb-2">
               {section.playlists.map((playlist) => {
-                const thumbnail = getFirstVideoThumbnail(playlist.videos[0]?.url);
+                const thumbnail = playlist.thunmbnail;
                 return (
                   <div
                     key={playlist.name}
