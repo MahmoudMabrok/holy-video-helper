@@ -22,6 +22,7 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
   const startTimeRef = useRef<number>(startTime);
 
   useEffect(() => {
+    console.log('VideoPlayer mounted/updated:', { videoId, startTime });
     // Cleanup previous player when videoId changes
     if (containerRef.current !== videoId) {
       if (playerRef.current) {
@@ -49,10 +50,11 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
         playerRef.current.destroy();
       }
     };
-  }, [videoId]);
+  }, [videoId, startTime]);
 
   const initializePlayer = () => {
     if (!videoId) return;
+    console.log('Initializing player with:', { videoId, startTime: startTimeRef.current });
 
     if (playerRef.current) {
       playerRef.current.loadVideoById({
@@ -75,8 +77,10 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
       width: '100%',
       events: {
         onReady: (event: any) => {
+          const videoDuration = event.target.getDuration();
+          console.log('Player ready, duration:', videoDuration);
+          setDuration(videoDuration);
           event.target.playVideo();
-          setDuration(event.target.getDuration());
         },
         onStateChange: onPlayerStateChange,
       },
@@ -86,11 +90,15 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
   const onPlayerStateChange = (event: any) => {
     if (!videoId) return;
 
+    console.log('Player state changed:', event.data);
+
     if (event.data === window.YT.PlayerState.PLAYING) {
       progressIntervalRef.current = window.setInterval(() => {
         if (playerRef.current && playerRef.current.getCurrentTime) {
           const currentTime = Math.floor(playerRef.current.getCurrentTime());
-          onProgressChange(currentTime, duration);
+          const videoDuration = playerRef.current.getDuration();
+          console.log('Progress update:', { currentTime, videoDuration });
+          onProgressChange(currentTime, videoDuration);
         }
       }, 1000);
     } else {

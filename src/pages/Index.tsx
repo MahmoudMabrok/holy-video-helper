@@ -34,17 +34,17 @@ const Index = () => {
   useEffect(() => {
     const savedProgress = localStorage.getItem(VIDEO_PROGRESS_KEY);
     if (savedProgress) {
-      setVideoProgress(JSON.parse(savedProgress));
+      const parsedProgress = JSON.parse(savedProgress);
+      console.log('Loaded saved progress:', parsedProgress);
+      setVideoProgress(parsedProgress);
     }
 
     const lastVideo = localStorage.getItem(LAST_VIDEO_KEY);
     if (lastVideo) {
       try {
         const parsedLastVideo = JSON.parse(lastVideo) as LastVideoState;
+        console.log('Loaded last video state:', parsedLastVideo);
         setLastVideoState(parsedLastVideo);
-        if (!selectedVideoId && !selectedPlaylistId) {
-          setSelectedVideoId(parsedLastVideo.videoId);
-        }
       } catch (e) {
         console.error('Error loading last video state:', e);
       }
@@ -52,8 +52,17 @@ const Index = () => {
   }, []);
 
   const handleProgressChange = (videoId: string, seconds: number, duration: number) => {
-    if (duration === 0) return; // Avoid division by zero
-    const progress = seconds / duration;
+    console.log('Progress change:', { videoId, seconds, duration });
+    
+    if (!duration || duration === 0) {
+      console.log('Invalid duration, skipping progress update');
+      return;
+    }
+
+    const progress = Math.min(seconds / duration, 1);
+    console.log('Calculated progress:', progress);
+
+    // Update progress
     const newProgress = { ...videoProgress };
     newProgress[videoId] = progress;
     setVideoProgress(newProgress);
@@ -65,6 +74,7 @@ const Index = () => {
       playlistId: selectedPlaylistId || '',
       position: seconds
     };
+    console.log('Saving last video state:', newLastVideoState);
     localStorage.setItem(LAST_VIDEO_KEY, JSON.stringify(newLastVideoState));
     setLastVideoState(newLastVideoState);
   };
@@ -97,7 +107,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4">
-        {lastVideoState && !selectedPlaylist && (
+        {lastVideoState && !selectedVideoId && !selectedPlaylist && (
           <div className="w-full py-4 animate-fade-in">
             <h2 className="text-xl font-semibold mb-2">Continue Watching</h2>
             <VideoPlayer 
