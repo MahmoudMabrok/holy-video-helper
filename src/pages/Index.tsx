@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { fetchContent } from "@/services/api";
 import { SectionCard } from "@/components/SectionCard";
@@ -48,9 +47,11 @@ const Index = () => {
     }
   }, [sections]);
 
-  const handleProgressChange = (videoId: string, seconds: number) => {
+  const handleProgressChange = (videoId: string, seconds: number, duration: number) => {
+    if (duration === 0) return; // Avoid division by zero
+    const progress = seconds / duration;
     const newProgress = { ...videoProgress };
-    newProgress[videoId] = seconds;
+    newProgress[videoId] = progress;
     setVideoProgress(newProgress);
     localStorage.setItem(VIDEO_PROGRESS_KEY, JSON.stringify(newProgress));
   };
@@ -88,7 +89,7 @@ const Index = () => {
           <div className="w-full p-4 animate-fade-in">
             <VideoPlayer 
               videoId={selectedVideoId}
-              onProgressChange={(seconds) => handleProgressChange(selectedVideoId, seconds)}
+              onProgressChange={(seconds, duration) => handleProgressChange(selectedVideoId, seconds, duration)}
             />
           </div>
         )}

@@ -11,7 +11,7 @@ interface PlaylistViewProps {
   videoProgress: { [key: string]: number };
   onBack: () => void;
   onVideoSelect: (videoId: string) => void;
-  onProgressChange: (videoId: string, seconds: number) => void;
+  onProgressChange: (videoId: string, seconds: number, duration: number) => void;
 }
 
 const getVideoId = (url: string) => {
@@ -48,7 +48,7 @@ export function PlaylistView({
         <div className="w-full px-4">
           <VideoPlayer 
             videoId={selectedVideoId}
-            onProgressChange={(seconds) => onProgressChange(selectedVideoId, seconds)}
+            onProgressChange={(seconds, duration) => onProgressChange(selectedVideoId, seconds, duration)}
           />
         </div>
       )}
@@ -64,7 +64,7 @@ export function PlaylistView({
                 key={video.title}
                 video={video}
                 isSelected={videoId === selectedVideoId}
-                progress={videoProgress[videoId] ? Math.floor(videoProgress[videoId] / 60) : 0}
+                progress={videoProgress[videoId] || 0}
                 onClick={() => onVideoSelect(videoId)}
               />
             );

@@ -1,9 +1,9 @@
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface VideoPlayerProps {
   videoId: string;
-  onProgressChange: (seconds: number) => void;
+  onProgressChange: (seconds: number, duration: number) => void;
 }
 
 declare global {
@@ -17,6 +17,7 @@ export function VideoPlayer({ videoId, onProgressChange }: VideoPlayerProps) {
   const playerRef = useRef<any>(null);
   const progressIntervalRef = useRef<number | null>(null);
   const containerRef = useRef<string>(videoId);
+  const [duration, setDuration] = useState<number>(0);
 
   useEffect(() => {
     // Cleanup previous player when videoId changes
@@ -69,6 +70,7 @@ export function VideoPlayer({ videoId, onProgressChange }: VideoPlayerProps) {
       events: {
         onReady: (event: any) => {
           event.target.playVideo();
+          setDuration(event.target.getDuration());
         },
         onStateChange: onPlayerStateChange,
       },
@@ -82,7 +84,7 @@ export function VideoPlayer({ videoId, onProgressChange }: VideoPlayerProps) {
       progressIntervalRef.current = window.setInterval(() => {
         if (playerRef.current && playerRef.current.getCurrentTime) {
           const currentTime = Math.floor(playerRef.current.getCurrentTime());
-          onProgressChange(currentTime);
+          onProgressChange(currentTime, duration);
         }
       }, 1000);
     } else {
