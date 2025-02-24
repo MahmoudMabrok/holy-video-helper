@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { fetchContent } from "@/services/api";
 import { SectionCard } from "@/components/SectionCard";
@@ -23,6 +24,7 @@ const Index = () => {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [videoProgress, setVideoProgress] = useState<VideoProgress>({});
+  const [lastVideoState, setLastVideoState] = useState<LastVideoState | null>(null);
 
   const { data: sections, isLoading, error } = useQuery({
     queryKey: ["content"],
@@ -35,17 +37,19 @@ const Index = () => {
       setVideoProgress(JSON.parse(savedProgress));
     }
 
-    const lastVideoState = localStorage.getItem(LAST_VIDEO_KEY);
-    if (lastVideoState && sections) {
+    const lastVideo = localStorage.getItem(LAST_VIDEO_KEY);
+    if (lastVideo) {
       try {
-        const { playlistId, videoId } = JSON.parse(lastVideoState) as LastVideoState;
-        setSelectedPlaylistId(playlistId);
-        setSelectedVideoId(videoId);
+        const parsedLastVideo = JSON.parse(lastVideo) as LastVideoState;
+        setLastVideoState(parsedLastVideo);
+        if (!selectedVideoId && !selectedPlaylistId) {
+          setSelectedVideoId(parsedLastVideo.videoId);
+        }
       } catch (e) {
         console.error('Error loading last video state:', e);
       }
     }
-  }, [sections]);
+  }, []);
 
   const handleProgressChange = (videoId: string, seconds: number, duration: number) => {
     if (duration === 0) return; // Avoid division by zero
@@ -54,6 +58,15 @@ const Index = () => {
     newProgress[videoId] = progress;
     setVideoProgress(newProgress);
     localStorage.setItem(VIDEO_PROGRESS_KEY, JSON.stringify(newProgress));
+
+    // Save last video state
+    const newLastVideoState: LastVideoState = {
+      videoId,
+      playlistId: selectedPlaylistId || '',
+      position: seconds
+    };
+    localStorage.setItem(LAST_VIDEO_KEY, JSON.stringify(newLastVideoState));
+    setLastVideoState(newLastVideoState);
   };
 
   if (isLoading) {
@@ -79,17 +92,18 @@ const Index = () => {
   }
 
   const selectedPlaylist = sections?.flatMap(s => s.playlists).find(p => p.name === selectedPlaylistId);
-  const lastWatchedVideo = selectedVideoId && !selectedPlaylistId;
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4">
-        {lastWatchedVideo && (
-          <div className="w-full p-4 animate-fade-in">
+        {lastVideoState && !selectedPlaylist && (
+          <div className="w-full py-4 animate-fade-in">
+            <h2 className="text-xl font-semibold mb-2">Continue Watching</h2>
             <VideoPlayer 
-              videoId={selectedVideoId}
-              onProgressChange={(seconds, duration) => handleProgressChange(selectedVideoId, seconds, duration)}
+              videoId={lastVideoState.videoId}
+              startTime={lastVideoState.position}
+              onProgressChange={(seconds, duration) => handleProgressChange(lastVideoState.videoId, seconds, duration)}
             />
           </div>
         )}
