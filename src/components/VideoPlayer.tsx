@@ -21,10 +21,20 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
   const [duration, setDuration] = useState<number>(0);
   const startTimeRef = useRef<number>(startTime);
   const hasInitialProgressRef = useRef<boolean>(startTime === -1);
+  const playerContainerId = `youtube-player-${videoId}`;
 
   useEffect(() => {
     console.log('VideoPlayer mounted/updated:', { videoId, startTime });
-    // Cleanup previous player when videoId changes
+    
+    // Create container if it doesn't exist
+    let container = document.getElementById(playerContainerId);
+    if (!container) {
+      container = document.createElement('div');
+      container.id = playerContainerId;
+      document.getElementById('youtube-player-container')?.appendChild(container);
+    }
+
+    // Reset state when videoId changes
     if (containerRef.current !== videoId) {
       if (playerRef.current) {
         playerRef.current.destroy();
@@ -34,63 +44,87 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
       hasInitialProgressRef.current = startTime === -1;
     }
 
-    if (!window.YT) {
+    const initYouTubePlayer = () => {
+      if (!videoId || !document.getElementById(playerContainerId)) return;
+      
+      console.log('Initializing player with:', { videoId, startTime: startTimeRef.current });
+      
+      if (playerRef.current) {
+        try {
+          playerRef.current.loadVideoById({
+            videoId: videoId,
+            startSeconds: startTimeRef.current >= 0 ? startTimeRef.current : 0
+          });
+        } catch (e) {
+          console.error('Error loading video:', e);
+          // Recreate player if loading fails
+          playerRef.current = null;
+          initializeNewPlayer();
+        }
+        return;
+      }
+
+      initializeNewPlayer();
+    };
+
+    const initializeNewPlayer = () => {
+      try {
+        playerRef.current = new window.YT.Player(playerContainerId, {
+          videoId: videoId,
+          playerVars: {
+            autoplay: 1,
+            controls: 1,
+            modestbranding: 1,
+            rel: 0,
+            start: startTimeRef.current >= 0 ? startTimeRef.current : 0
+          },
+          height: '100%',
+          width: '100%',
+          events: {
+            onReady: (event: any) => {
+              const videoDuration = event.target.getDuration();
+              console.log('Player ready, duration:', videoDuration);
+              setDuration(videoDuration);
+              event.target.playVideo();
+            },
+            onStateChange: onPlayerStateChange,
+            onError: (event: any) => {
+              console.error('YouTube player error:', event.data);
+            }
+          },
+        });
+      } catch (e) {
+        console.error('Error creating YouTube player:', e);
+      }
+    };
+
+    if (!window.YT || !window.YT.Player) {
       const tag = document.createElement('script');
       tag.src = 'https://www.youtube.com/iframe_api';
       const firstScriptTag = document.getElementsByTagName('script')[0];
       firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
-      window.onYouTubeIframeAPIReady = () => initializePlayer();
+      window.onYouTubeIframeAPIReady = initYouTubePlayer;
     } else {
-      initializePlayer();
+      initYouTubePlayer();
     }
 
     return () => {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
       }
-      if (playerRef.current) {
-        playerRef.current.destroy();
+      if (playerRef.current && playerRef.current.destroy) {
+        try {
+          playerRef.current.destroy();
+        } catch (e) {
+          console.error('Error destroying player:', e);
+        }
+        playerRef.current = null;
       }
     };
   }, [videoId, startTime]);
 
-  const initializePlayer = () => {
-    if (!videoId) return;
-    console.log('Initializing player with:', { videoId, startTime: startTimeRef.current });
-
-    if (playerRef.current) {
-      playerRef.current.loadVideoById({
-        videoId: videoId,
-        startSeconds: startTimeRef.current >= 0 ? startTimeRef.current : 0
-      });
-      return;
-    }
-
-    playerRef.current = new window.YT.Player(`youtube-player-${videoId}`, {
-      videoId: videoId,
-      playerVars: {
-        autoplay: 1,
-        controls: 1,
-        modestbranding: 1,
-        rel: 0,
-        start: startTimeRef.current >= 0 ? startTimeRef.current : 0
-      },
-      height: '100%',
-      width: '100%',
-      events: {
-        onReady: (event: any) => {
-          const videoDuration = event.target.getDuration();
-          console.log('Player ready, duration:', videoDuration);
-          setDuration(videoDuration);
-          event.target.playVideo();
-        },
-        onStateChange: onPlayerStateChange,
-      },
-    });
-  };
-
   const onPlayerStateChange = (event: any) => {
-    if (!videoId) return;
+    if (!videoId || !playerRef.current) return;
 
     console.log('Player state changed:', event.data);
 
@@ -102,11 +136,18 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
       }
 
       progressIntervalRef.current = window.setInterval(() => {
-        if (playerRef.current && playerRef.current.getCurrentTime) {
-          const currentTime = Math.floor(playerRef.current.getCurrentTime());
-          const videoDuration = playerRef.current.getDuration();
-          console.log('Progress update:', { currentTime, videoDuration });
-          onProgressChange(currentTime, videoDuration);
+        if (playerRef.current?.getCurrentTime) {
+          try {
+            const currentTime = Math.floor(playerRef.current.getCurrentTime());
+            const videoDuration = playerRef.current.getDuration();
+            console.log('Progress update:', { currentTime, videoDuration });
+            onProgressChange(currentTime, videoDuration);
+          } catch (e) {
+            console.error('Error getting player time:', e);
+            if (progressIntervalRef.current) {
+              clearInterval(progressIntervalRef.current);
+            }
+          }
         }
       }, 1000);
     } else {
@@ -118,7 +159,7 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
 
   return (
     <div className="w-full aspect-video bg-black relative">
-      <div id={`youtube-player-${videoId}`} className="absolute inset-0" />
+      <div id="youtube-player-container" className="absolute inset-0" />
     </div>
   );
 }
