@@ -28,6 +28,11 @@ export function PlaylistView({
   onVideoSelect,
   onProgressChange
 }: PlaylistViewProps) {
+  const getStartTime = (videoId: string, duration: number) => {
+    const progress = videoProgress[videoId] || 0;
+    return Math.floor(progress * duration);
+  };
+
   return (
     <div className="animate-fade-in space-y-4">
       <div className="sticky top-[73px] bg-background z-10 p-4 border-b">
@@ -48,7 +53,17 @@ export function PlaylistView({
         <div className="w-full px-4">
           <VideoPlayer 
             videoId={selectedVideoId}
-            onProgressChange={(seconds, duration) => onProgressChange(selectedVideoId, seconds, duration)}
+            startTime={videoProgress[selectedVideoId] ? -1 : 0} // Use -1 as flag to indicate we should get progress
+            onProgressChange={(seconds, duration) => {
+              if (seconds === 0 && videoProgress[selectedVideoId]) {
+                // Initial load - seek to saved progress
+                const startTime = getStartTime(selectedVideoId, duration);
+                console.log('Seeking to saved progress:', { videoId: selectedVideoId, startTime, duration });
+                onProgressChange(selectedVideoId, startTime, duration);
+              } else {
+                onProgressChange(selectedVideoId, seconds, duration);
+              }
+            }}
           />
         </div>
       )}

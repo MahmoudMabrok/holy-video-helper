@@ -20,6 +20,7 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
   const containerRef = useRef<string>(videoId);
   const [duration, setDuration] = useState<number>(0);
   const startTimeRef = useRef<number>(startTime);
+  const hasInitialProgressRef = useRef<boolean>(startTime === -1);
 
   useEffect(() => {
     console.log('VideoPlayer mounted/updated:', { videoId, startTime });
@@ -30,6 +31,7 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
         playerRef.current = null;
       }
       containerRef.current = videoId;
+      hasInitialProgressRef.current = startTime === -1;
     }
 
     if (!window.YT) {
@@ -59,7 +61,7 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
     if (playerRef.current) {
       playerRef.current.loadVideoById({
         videoId: videoId,
-        startSeconds: startTimeRef.current
+        startSeconds: startTimeRef.current >= 0 ? startTimeRef.current : 0
       });
       return;
     }
@@ -71,7 +73,7 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
         controls: 1,
         modestbranding: 1,
         rel: 0,
-        start: startTimeRef.current
+        start: startTimeRef.current >= 0 ? startTimeRef.current : 0
       },
       height: '100%',
       width: '100%',
@@ -93,6 +95,12 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
     console.log('Player state changed:', event.data);
 
     if (event.data === window.YT.PlayerState.PLAYING) {
+      if (hasInitialProgressRef.current) {
+        // Send initial progress to get the saved position
+        hasInitialProgressRef.current = false;
+        onProgressChange(0, playerRef.current.getDuration());
+      }
+
       progressIntervalRef.current = window.setInterval(() => {
         if (playerRef.current && playerRef.current.getCurrentTime) {
           const currentTime = Math.floor(playerRef.current.getCurrentTime());
