@@ -20,11 +20,13 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
   const containerRef = useRef<string>(videoId);
   const [duration, setDuration] = useState<number>(0);
   const startTimeRef = useRef<number>(startTime);
-  const hasInitialProgressRef = useRef<boolean>(startTime === -1);
+  const hasInitialSeekRef = useRef<boolean>(false);
   const playerContainerId = `youtube-player-${videoId}`;
 
   useEffect(() => {
     console.log('VideoPlayer mounted/updated:', { videoId, startTime });
+    startTimeRef.current = startTime;
+    hasInitialSeekRef.current = false;
     
     // Create container if it doesn't exist
     let container = document.getElementById(playerContainerId);
@@ -41,7 +43,6 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
         playerRef.current = null;
       }
       containerRef.current = videoId;
-      hasInitialProgressRef.current = startTime === -1;
     }
 
     const initYouTubePlayer = () => {
@@ -53,7 +54,7 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
         try {
           playerRef.current.loadVideoById({
             videoId: videoId,
-            startSeconds: startTimeRef.current >= 0 ? startTimeRef.current : 0
+            startSeconds: startTimeRef.current
           });
         } catch (e) {
           console.error('Error loading video:', e);
@@ -76,7 +77,7 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
             controls: 1,
             modestbranding: 1,
             rel: 0,
-            start: startTimeRef.current >= 0 ? startTimeRef.current : 0
+            start: startTimeRef.current
           },
           height: '100%',
           width: '100%',
@@ -85,6 +86,12 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
               const videoDuration = event.target.getDuration();
               console.log('Player ready, duration:', videoDuration);
               setDuration(videoDuration);
+              
+              // If we have a startTime, seek to it
+              if (startTimeRef.current > 0) {
+                console.log('Seeking to startTime:', startTimeRef.current);
+                event.target.seekTo(startTimeRef.current, true);
+              }
               event.target.playVideo();
             },
             onStateChange: onPlayerStateChange,
@@ -129,10 +136,10 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
     console.log('Player state changed:', event.data);
 
     if (event.data === window.YT.PlayerState.PLAYING) {
-      if (hasInitialProgressRef.current) {
-        // Send initial progress to get the saved position
-        hasInitialProgressRef.current = false;
-        onProgressChange(0, playerRef.current.getDuration());
+      if (!hasInitialSeekRef.current && startTimeRef.current > 0) {
+        hasInitialSeekRef.current = true;
+        console.log('Initial seek to:', startTimeRef.current);
+        playerRef.current.seekTo(startTimeRef.current, true);
       }
 
       progressIntervalRef.current = window.setInterval(() => {
