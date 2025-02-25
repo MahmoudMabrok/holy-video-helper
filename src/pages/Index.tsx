@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchContent } from "@/services/api";
 import { SectionCard } from "@/components/SectionCard";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { Header } from "@/components/Header";
 import { PlaylistView } from "@/components/PlaylistView";
@@ -35,9 +35,13 @@ const Index = () => {
   useEffect(() => {
     const savedProgress = localStorage.getItem(VIDEO_PROGRESS_KEY);
     if (savedProgress) {
-      const parsedProgress = JSON.parse(savedProgress);
-      console.log('Loaded saved progress:', parsedProgress);
-      setVideoProgress(parsedProgress);
+      try {
+        const parsedProgress = JSON.parse(savedProgress);
+        console.log('Loaded saved progress:', parsedProgress);
+        setVideoProgress(parsedProgress);
+      } catch (e) {
+        console.error('Error loading saved progress:', e);
+      }
     }
 
     const lastVideo = localStorage.getItem(LAST_VIDEO_KEY);
@@ -52,51 +56,46 @@ const Index = () => {
     }
   }, []);
 
-  // Reset Continue Watching when selecting a new video or playlist
   useEffect(() => {
     if (selectedVideoId || selectedPlaylistId) {
       setIsContinueWatchingActive(false);
     }
   }, [selectedVideoId, selectedPlaylistId]);
 
-  const handleProgressChange = (videoId: string, seconds: number, duration: number) => {
-    console.log('Progress change:', { videoId, seconds, duration });
-    
-    if (!duration || duration === 0) {
-      console.log('Invalid duration, skipping progress update');
-      return;
-    }
+  const handleProgressChange = useCallback((videoId: string, seconds: number, duration: number) => {
+    if (!duration || duration === 0) return;
+
+    // Only update state every 5 seconds or when the video ends
+    if (seconds % 5 !== 0 && seconds !== duration) return;
 
     const progress = Math.min(seconds / duration, 1);
-    console.log('Calculated progress:', progress);
-
-    // Update progress with timestamp
     const progressData = {
       seconds,
       duration,
       lastUpdated: new Date().toISOString()
     };
 
-    const newProgress = { ...videoProgress };
-    newProgress[videoId] = progress;
-    setVideoProgress(newProgress);
-
-    // Save full progress data
+    // Use local storage directly to avoid unnecessary re-renders
     const savedProgress = localStorage.getItem(VIDEO_PROGRESS_KEY);
     const existingProgress = savedProgress ? JSON.parse(savedProgress) : {};
     existingProgress[videoId] = progressData;
     localStorage.setItem(VIDEO_PROGRESS_KEY, JSON.stringify(existingProgress));
 
-    // Save last video state
+    // Update video progress state only every 5 seconds
+    setVideoProgress(prev => ({
+      ...prev,
+      [videoId]: progress
+    }));
+
+    // Update last video state
     const newLastVideoState: LastVideoState = {
       videoId,
       playlistId: selectedPlaylistId || '',
       position: seconds
     };
-    console.log('Saving last video state:', newLastVideoState);
     localStorage.setItem(LAST_VIDEO_KEY, JSON.stringify(newLastVideoState));
     setLastVideoState(newLastVideoState);
-  };
+  }, [selectedPlaylistId]);
 
   if (isLoading) {
     return (
@@ -130,6 +129,7 @@ const Index = () => {
           <div className="w-full py-4 animate-fade-in">
             <h2 className="text-xl font-semibold mb-2">Continue Watching</h2>
             <VideoPlayer 
+              key={`continue-${lastVideoState.videoId}`}
               videoId={lastVideoState.videoId}
               startTime={lastVideoState.position}
               onProgressChange={(seconds, duration) => handleProgressChange(lastVideoState.videoId, seconds, duration)}
