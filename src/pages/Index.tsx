@@ -70,11 +70,22 @@ const Index = () => {
     const progress = Math.min(seconds / duration, 1);
     console.log('Calculated progress:', progress);
 
-    // Update progress
+    // Update progress with timestamp
+    const progressData = {
+      seconds,
+      duration,
+      lastUpdated: new Date().toISOString()
+    };
+
     const newProgress = { ...videoProgress };
     newProgress[videoId] = progress;
     setVideoProgress(newProgress);
-    localStorage.setItem(VIDEO_PROGRESS_KEY, JSON.stringify(newProgress));
+
+    // Save full progress data
+    const savedProgress = localStorage.getItem(VIDEO_PROGRESS_KEY);
+    const existingProgress = savedProgress ? JSON.parse(savedProgress) : {};
+    existingProgress[videoId] = progressData;
+    localStorage.setItem(VIDEO_PROGRESS_KEY, JSON.stringify(existingProgress));
 
     // Save last video state
     const newLastVideoState: LastVideoState = {

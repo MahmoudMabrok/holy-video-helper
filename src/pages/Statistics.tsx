@@ -11,7 +11,11 @@ interface DailyStats {
 }
 
 interface VideoProgress {
-  [key: string]: number;
+  [key: string]: {
+    seconds: number;
+    duration: number;
+    lastUpdated: string;
+  };
 }
 
 export default function Statistics() {
@@ -20,19 +24,31 @@ export default function Statistics() {
 
   useEffect(() => {
     const videoProgress = localStorage.getItem('video_progress');
-    const progressData: VideoProgress = videoProgress ? JSON.parse(videoProgress) : {};
+    if (!videoProgress) return;
 
-    const today = new Date().toLocaleDateString();
-    const totalMinutes = Object.values(progressData).reduce((acc, seconds) => {
-      return acc + Math.floor(seconds / 60);
-    }, 0);
+    try {
+      const progressData: VideoProgress = JSON.parse(videoProgress);
+      const statsMap: { [date: string]: number } = {};
 
-    const stats: DailyStats[] = [{
-      date: today,
-      minutes: totalMinutes
-    }];
+      // Process each video's progress data
+      Object.values(progressData).forEach(({ seconds, lastUpdated }) => {
+        const date = new Date(lastUpdated).toLocaleDateString();
+        if (!statsMap[date]) {
+          statsMap[date] = 0;
+        }
+        statsMap[date] += Math.floor(seconds / 60);
+      });
 
-    setDailyStats(stats);
+      // Convert to array and sort by date
+      const stats: DailyStats[] = Object.entries(statsMap).map(([date, minutes]) => ({
+        date,
+        minutes
+      })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      setDailyStats(stats);
+    } catch (e) {
+      console.error('Error processing video progress data:', e);
+    }
   }, []);
 
   return (
@@ -52,22 +68,28 @@ export default function Statistics() {
 
         <div className="p-4">
           <div className="grid gap-4">
-            {dailyStats.map((stat) => (
-              <Card key={stat.date}>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    {stat.date}
-                  </CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stat.minutes} minutes</div>
-                  <p className="text-xs text-muted-foreground">
-                    Total watch time
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+            {dailyStats.length > 0 ? (
+              dailyStats.map((stat) => (
+                <Card key={stat.date}>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      {stat.date}
+                    </CardTitle>
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stat.minutes} minutes</div>
+                    <p className="text-xs text-muted-foreground">
+                      Total watch time
+                    </p>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center text-muted-foreground py-8">
+                No watch statistics available yet
+              </div>
+            )}
           </div>
         </div>
       </div>

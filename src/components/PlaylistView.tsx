@@ -28,9 +28,18 @@ export function PlaylistView({
   onVideoSelect,
   onProgressChange
 }: PlaylistViewProps) {
-  const getStartTime = (videoId: string, duration: number) => {
-    const progress = videoProgress[videoId] || 0;
-    return Math.floor(progress * duration);
+  
+  const getStartTime = (videoId: string) => {
+    const progressData = localStorage.getItem('video_progress');
+    if (!progressData) return 0;
+
+    try {
+      const progress = JSON.parse(progressData);
+      return progress[videoId]?.seconds || 0;
+    } catch (e) {
+      console.error('Error getting start time:', e);
+      return 0;
+    }
   };
 
   return (
@@ -53,17 +62,8 @@ export function PlaylistView({
         <div className="w-full px-4">
           <VideoPlayer 
             videoId={selectedVideoId}
-            startTime={videoProgress[selectedVideoId] ? -1 : 0} // Use -1 as flag to indicate we should get progress
-            onProgressChange={(seconds, duration) => {
-              if (seconds === 0 && videoProgress[selectedVideoId]) {
-                // Initial load - seek to saved progress
-                const startTime = getStartTime(selectedVideoId, duration);
-                console.log('Seeking to saved progress:', { videoId: selectedVideoId, startTime, duration });
-                onProgressChange(selectedVideoId, startTime, duration);
-              } else {
-                onProgressChange(selectedVideoId, seconds, duration);
-              }
-            }}
+            startTime={getStartTime(selectedVideoId)}
+            onProgressChange={(seconds, duration) => onProgressChange(selectedVideoId, seconds, duration)}
           />
         </div>
       )}
