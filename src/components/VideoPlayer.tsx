@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 
 interface VideoPlayerProps {
@@ -22,6 +21,8 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
   const startTimeRef = useRef<number>(startTime);
   const hasInitialSeekRef = useRef<boolean>(false);
   const playerContainerId = `youtube-player-${videoId}`;
+  const [currentTime, setCurrentTime] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
 
   useEffect(() => {
     console.log('VideoPlayer mounted/updated:', { videoId, startTime });
@@ -130,6 +131,15 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
     };
   }, [videoId, startTime]);
 
+  useEffect(() => {
+    return () => {
+      if (currentTime > 0 && videoDuration > 0) {
+        console.log('Saving progress on unmount:', { currentTime, videoDuration });
+        onProgressChange(currentTime, videoDuration);
+      }
+    };
+  }, [currentTime, videoDuration, onProgressChange]);
+
   const onPlayerStateChange = (event: any) => {
     if (!videoId || !playerRef.current) return;
 
@@ -145,10 +155,10 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
       progressIntervalRef.current = window.setInterval(() => {
         if (playerRef.current?.getCurrentTime) {
           try {
-            const currentTime = Math.floor(playerRef.current.getCurrentTime());
-            const videoDuration = playerRef.current.getDuration();
-            console.log('Progress update:', { currentTime, videoDuration });
-            onProgressChange(currentTime, videoDuration);
+            const time = Math.floor(playerRef.current.getCurrentTime());
+            const duration = playerRef.current.getDuration();
+            setCurrentTime(time);
+            setVideoDuration(duration);
           } catch (e) {
             console.error('Error getting player time:', e);
             if (progressIntervalRef.current) {

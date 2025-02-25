@@ -2,30 +2,24 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchContent } from "@/services/api";
 import { SectionCard } from "@/components/SectionCard";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { Header } from "@/components/Header";
 import { PlaylistView } from "@/components/PlaylistView";
-
-const LAST_VIDEO_KEY = 'last_video';
-const VIDEO_PROGRESS_KEY = 'video_progress';
-
-interface LastVideoState {
-  playlistId: string;
-  videoId: string;
-  position: number;
-}
-
-interface VideoProgress {
-  [videoId: string]: number;
-}
+import { useVideoStore } from "@/store/videoStore";
 
 const Index = () => {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
-  const [videoProgress, setVideoProgress] = useState<VideoProgress>({});
-  const [lastVideoState, setLastVideoState] = useState<LastVideoState | null>(null);
   const [isContinueWatchingActive, setIsContinueWatchingActive] = useState(true);
+
+  const { 
+    videoProgress, 
+    lastVideoState, 
+    updateProgress, 
+    updateLastVideo,
+    loadSavedState 
+  } = useVideoStore();
 
   const { data: sections, isLoading, error } = useQuery({
     queryKey: ["content"],
@@ -33,28 +27,8 @@ const Index = () => {
   });
 
   useEffect(() => {
-    const savedProgress = localStorage.getItem(VIDEO_PROGRESS_KEY);
-    if (savedProgress) {
-      try {
-        const parsedProgress = JSON.parse(savedProgress);
-        console.log('Loaded saved progress:', parsedProgress);
-        setVideoProgress(parsedProgress);
-      } catch (e) {
-        console.error('Error loading saved progress:', e);
-      }
-    }
-
-    const lastVideo = localStorage.getItem(LAST_VIDEO_KEY);
-    if (lastVideo) {
-      try {
-        const parsedLastVideo = JSON.parse(lastVideo) as LastVideoState;
-        console.log('Loaded last video state:', parsedLastVideo);
-        setLastVideoState(parsedLastVideo);
-      } catch (e) {
-        console.error('Error loading last video state:', e);
-      }
-    }
-  }, []);
+    loadSavedState();
+  }, [loadSavedState]);
 
   useEffect(() => {
     if (selectedVideoId || selectedPlaylistId) {
@@ -62,40 +36,28 @@ const Index = () => {
     }
   }, [selectedVideoId, selectedPlaylistId]);
 
-  const handleProgressChange = useCallback((videoId: string, seconds: number, duration: number) => {
+  // Save to localStorage when component unmounts
+  useEffect(() => {
+    return () => {
+      localStorage.setItem('video_progress', JSON.stringify(videoProgress));
+      if (lastVideoState) {
+        localStorage.setItem('last_video', JSON.stringify(lastVideoState));
+      }
+    };
+  }, [videoProgress, lastVideoState]);
+
+  const handleProgressChange = (videoId: string, seconds: number, duration: number) => {
     if (!duration || duration === 0) return;
 
-    // Only update state every 5 seconds or when the video ends
-    if (seconds % 5 !== 0 && seconds !== duration) return;
-
-    const progress = Math.min(seconds / duration, 1);
-    const progressData = {
-      seconds,
-      duration,
-      lastUpdated: new Date().toISOString()
-    };
-
-    // Use local storage directly to avoid unnecessary re-renders
-    const savedProgress = localStorage.getItem(VIDEO_PROGRESS_KEY);
-    const existingProgress = savedProgress ? JSON.parse(savedProgress) : {};
-    existingProgress[videoId] = progressData;
-    localStorage.setItem(VIDEO_PROGRESS_KEY, JSON.stringify(existingProgress));
-
-    // Update video progress state only every 5 seconds
-    setVideoProgress(prev => ({
-      ...prev,
-      [videoId]: progress
-    }));
-
-    // Update last video state
-    const newLastVideoState: LastVideoState = {
+    updateProgress(videoId, seconds, duration);
+    
+    const newLastVideoState = {
       videoId,
       playlistId: selectedPlaylistId || '',
       position: seconds
     };
-    localStorage.setItem(LAST_VIDEO_KEY, JSON.stringify(newLastVideoState));
-    setLastVideoState(newLastVideoState);
-  }, [selectedPlaylistId]);
+    updateLastVideo(newLastVideoState);
+  };
 
   if (isLoading) {
     return (
@@ -121,6 +83,11 @@ const Index = () => {
 
   const selectedPlaylist = sections?.flatMap(s => s.playlists).find(p => p.name === selectedPlaylistId);
 
+  const normalizedProgress = Object.entries(videoProgress).reduce((acc, [id, data]) => {
+    acc[id] = data.seconds / data.duration;
+    return acc;
+  }, {} as { [key: string]: number });
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -131,7 +98,7 @@ const Index = () => {
             <VideoPlayer 
               key={`continue-${lastVideoState.videoId}`}
               videoId={lastVideoState.videoId}
-              startTime={lastVideoState.position}
+              startTime={videoProgress[lastVideoState.videoId]?.seconds || 0}
               onProgressChange={(seconds, duration) => handleProgressChange(lastVideoState.videoId, seconds, duration)}
             />
           </div>
@@ -141,7 +108,7 @@ const Index = () => {
           <PlaylistView
             playlist={selectedPlaylist}
             selectedVideoId={selectedVideoId}
-            videoProgress={videoProgress}
+            videoProgress={normalizedProgress}
             onBack={() => {
               setSelectedPlaylistId(null);
               setSelectedVideoId(null);
