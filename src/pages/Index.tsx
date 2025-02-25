@@ -25,6 +25,7 @@ const Index = () => {
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [videoProgress, setVideoProgress] = useState<VideoProgress>({});
   const [lastVideoState, setLastVideoState] = useState<LastVideoState | null>(null);
+  const [isContinueWatchingActive, setIsContinueWatchingActive] = useState(true);
 
   const { data: sections, isLoading, error } = useQuery({
     queryKey: ["content"],
@@ -50,6 +51,13 @@ const Index = () => {
       }
     }
   }, []);
+
+  // Reset Continue Watching when selecting a new video or playlist
+  useEffect(() => {
+    if (selectedVideoId || selectedPlaylistId) {
+      setIsContinueWatchingActive(false);
+    }
+  }, [selectedVideoId, selectedPlaylistId]);
 
   const handleProgressChange = (videoId: string, seconds: number, duration: number) => {
     console.log('Progress change:', { videoId, seconds, duration });
@@ -107,7 +115,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4">
-        {lastVideoState && !selectedVideoId && !selectedPlaylist && (
+        {lastVideoState && !selectedVideoId && !selectedPlaylist && isContinueWatchingActive && (
           <div className="w-full py-4 animate-fade-in">
             <h2 className="text-xl font-semibold mb-2">Continue Watching</h2>
             <VideoPlayer 
@@ -126,6 +134,7 @@ const Index = () => {
             onBack={() => {
               setSelectedPlaylistId(null);
               setSelectedVideoId(null);
+              setIsContinueWatchingActive(true);
             }}
             onVideoSelect={setSelectedVideoId}
             onProgressChange={handleProgressChange}
