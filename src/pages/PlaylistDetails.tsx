@@ -15,7 +15,8 @@ export default function PlaylistDetails() {
   
   const { 
     videoProgress, 
-    updateProgress, 
+    updateVideoProgress, 
+    lastVideoState,
     updateLastVideo 
   } = useVideoStore();
 
@@ -26,26 +27,12 @@ export default function PlaylistDetails() {
 
   const selectedPlaylist = sections?.flatMap(s => s.playlists).find(p => p.name === playlistId);
 
-  // Save progress on unmount
-  useEffect(() => {
-    return () => {
-      if (videoProgress) {
-        localStorage.setItem('video_progress', JSON.stringify(videoProgress));
-      }
-    };
-  }, [videoProgress]);
-
   const handleProgressChange = (videoId: string, seconds: number, duration: number) => {
+    console.log('handleProgressChange', videoId, duration);
+
     if (!duration || duration === 0) return;
 
-    updateProgress(videoId, seconds, duration);
-    
-    const newLastVideoState = {
-      videoId,
-      playlistId: playlistId || '',
-      position: seconds
-    };
-    updateLastVideo(newLastVideoState);
+    // updateProgress(videoId, seconds, duration);
   };
 
   if (!selectedPlaylist) {

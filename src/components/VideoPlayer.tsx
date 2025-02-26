@@ -1,5 +1,5 @@
-
-import { useEffect, useRef } from "react";
+import { useVideoStore } from "@/store/videoStore";
+import { useCallback, useEffect, useRef } from "react";
 
 interface VideoPlayerProps {
   videoId: string;
@@ -14,85 +14,79 @@ declare global {
   }
 }
 
-export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoPlayerProps) {
+export function VideoPlayer({ videoId, startTime = 0 }: VideoPlayerProps) {
   const playerRef = useRef<any>(null);
   const progressIntervalRef = useRef<number | null>(null);
   const containerRef = useRef<string>(videoId);
   const startTimeRef = useRef<number>(startTime);
   const hasInitialSeekRef = useRef<boolean>(false);
-  const currentProgressRef = useRef<{ time: number; duration: number }>({ time: 0, duration: 0 });
+  const currentProgressRef = useRef<{ time: number; duration: number }>({
+    time: 0,
+    duration: 0,
+  });
   const playerContainerId = `youtube-player-${videoId}`;
-  const lastUpdateRef = useRef<number>(0);
+  const progressUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const cleanupPlayer = () => {
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-      progressIntervalRef.current = null;
-    }
+  const { updateVideoProgress, updateLastVideo } = useVideoStore();
 
-    // Save progress before cleanup
-    if (currentProgressRef.current.time > 0 && currentProgressRef.current.duration > 0) {
-      console.log('Saving progress on cleanup:', currentProgressRef.current);
-      const now = Date.now();
-      // Prevent too frequent updates
-      if (now - lastUpdateRef.current > 500) {
-        lastUpdateRef.current = now;
-        onProgressChange(
-          currentProgressRef.current.time,
-          currentProgressRef.current.duration
-        );
-      }
-    }
+  const saveProgress = useCallback(() => {
+    updateVideoProgress(
+      videoId,
+      currentProgressRef.current.time,
+      currentProgressRef.current.duration
+    );
 
-    if (playerRef.current && playerRef.current.destroy) {
-      try {
-        playerRef.current.destroy();
-      } catch (e) {
-        console.error('Error destroying player:', e);
-      }
-      playerRef.current = null;
-    }
-
-    // Reset refs
-    currentProgressRef.current = { time: 0, duration: 0 };
-    hasInitialSeekRef.current = false;
-  };
+    updateLastVideo({ videoId, seconds: currentProgressRef.current.time });
+  }, [videoId, currentProgressRef, updateVideoProgress, updateLastVideo]);
 
   useEffect(() => {
-    console.log('VideoPlayer mounted/updated:', { videoId, startTime });
+    console.log("VideoPlayer mounted/updated:", { videoId, startTime });
     startTimeRef.current = startTime;
-    
+    hasInitialSeekRef.current = false;
+
     let container = document.getElementById(playerContainerId);
     if (!container) {
-      container = document.createElement('div');
+      container = document.createElement("div");
       container.id = playerContainerId;
-      document.getElementById('youtube-player-container')?.appendChild(container);
+      document
+        .getElementById("youtube-player-container")
+        ?.appendChild(container);
     }
 
-    // Clean up old player if videoId changes
     if (containerRef.current !== videoId) {
-      cleanupPlayer();
+      if (playerRef.current) {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
       containerRef.current = videoId;
     }
 
     const initYouTubePlayer = () => {
       if (!videoId || !document.getElementById(playerContainerId)) return;
-      
-      console.log('Initializing player with:', { videoId, startTime: startTimeRef.current });
-      
+
+      console.log("Initializing player with:", {
+        videoId,
+        startTime: startTimeRef.current,
+      });
+
       if (playerRef.current) {
         try {
           playerRef.current.loadVideoById({
             videoId: videoId,
-            startSeconds: startTimeRef.current
+            startSeconds: startTimeRef.current,
           });
-          return;
         } catch (e) {
-          console.error('Error loading video:', e);
-          cleanupPlayer();
+          console.error("Error loading video:", e);
+          playerRef.current = null;
+          initializeNewPlayer();
         }
+        return;
       }
 
+      initializeNewPlayer();
+    };
+
+    const initializeNewPlayer = () => {
       try {
         playerRef.current = new window.YT.Player(playerContainerId, {
           videoId: videoId,
@@ -101,55 +95,91 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
             controls: 1,
             modestbranding: 1,
             rel: 0,
-            start: startTimeRef.current
+            start: startTimeRef.current,
           },
-          height: '100%',
-          width: '100%',
+          height: "100%",
+          width: "100%",
           events: {
             onReady: (event: any) => {
               const videoDuration = event.target.getDuration();
-              console.log('Player ready, duration:', videoDuration);
+              console.log("Player ready, duration:", videoDuration);
               currentProgressRef.current.duration = videoDuration;
-              
+
               if (startTimeRef.current > 0) {
-                console.log('Seeking to startTime:', startTimeRef.current);
+                console.log("Seeking to startTime:", startTimeRef.current);
                 event.target.seekTo(startTimeRef.current, true);
               }
               event.target.playVideo();
             },
             onStateChange: onPlayerStateChange,
             onError: (event: any) => {
-              console.error('YouTube player error:', event.data);
-            }
+              console.error("YouTube player error:", event.data);
+            },
           },
         });
       } catch (e) {
-        console.error('Error creating YouTube player:', e);
+        console.error("Error creating YouTube player:", e);
       }
     };
 
     if (!window.YT || !window.YT.Player) {
-      const tag = document.createElement('script');
-      tag.src = 'https://www.youtube.com/iframe_api';
-      const firstScriptTag = document.getElementsByTagName('script')[0];
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName("script")[0];
       firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
       window.onYouTubeIframeAPIReady = initYouTubePlayer;
     } else {
       initYouTubePlayer();
     }
 
-    return cleanupPlayer;
-  }, [videoId, startTime]);
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+
+      if (progressUpdateTimeoutRef.current) {
+        clearTimeout(progressUpdateTimeoutRef.current);
+      }
+
+      if (
+        currentProgressRef.current.time > 0 &&
+        currentProgressRef.current.duration > 0
+      ) {
+        console.log(
+          "Saving final progress on unmount:",
+          currentProgressRef.current
+        );
+        saveProgress();
+      }
+
+      if (playerRef.current && playerRef.current.destroy) {
+        try {
+          playerRef.current.destroy();
+        } catch (e) {
+          console.error("Error destroying player:", e);
+        }
+        playerRef.current = null;
+      }
+    };
+  }, [videoId, startTime, playerContainerId, saveProgress]);
+
+  useEffect(() => {
+    return () => {
+      console.log("VideoPlayer cleared", videoId);
+
+      saveProgress();
+    };
+  }, [videoId, currentProgressRef, saveProgress]);
 
   const onPlayerStateChange = (event: any) => {
     if (!videoId || !playerRef.current) return;
 
-    console.log('Player state changed:', event.data);
+    console.log("Player state changed:", event.data);
 
     if (event.data === window.YT.PlayerState.PLAYING) {
       if (!hasInitialSeekRef.current && startTimeRef.current > 0) {
         hasInitialSeekRef.current = true;
-        console.log('Initial seek to:', startTimeRef.current);
+        console.log("Initial seek to:", startTimeRef.current);
         playerRef.current.seekTo(startTimeRef.current, true);
       }
 
@@ -164,30 +194,33 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
             const duration = playerRef.current.getDuration();
             currentProgressRef.current = { time, duration };
           } catch (e) {
-            console.error('Error getting player time:', e);
+            console.error("Error getting player time:", e);
             if (progressIntervalRef.current) {
               clearInterval(progressIntervalRef.current);
             }
           }
         }
       }, 1000);
-    } else if (event.data === window.YT.PlayerState.PAUSED || 
-               event.data === window.YT.PlayerState.ENDED) {
-      
+    } else if (
+      event.data === window.YT.PlayerState.PAUSED ||
+      event.data === window.YT.PlayerState.ENDED
+    ) {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
       }
 
-      // Debounce progress update
-      const now = Date.now();
-      if (now - lastUpdateRef.current > 500) {
-        lastUpdateRef.current = now;
-        console.log('Saving progress on pause/end:', currentProgressRef.current);
-        onProgressChange(
-          currentProgressRef.current.time,
-          currentProgressRef.current.duration
-        );
+      // Debounce the progress update to prevent rapid state updates
+      if (progressUpdateTimeoutRef.current) {
+        clearTimeout(progressUpdateTimeoutRef.current);
       }
+
+      progressUpdateTimeoutRef.current = setTimeout(() => {
+        console.log(
+          "Saving progress on pause/end:",
+          currentProgressRef.current
+        );
+        saveProgress();
+      }, 300);
     }
   };
 

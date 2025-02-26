@@ -2,9 +2,8 @@
 import { create } from 'zustand';
 
 interface LastVideoState {
-  playlistId: string;
   videoId: string;
-  position: number;
+  seconds: number;
 }
 
 interface VideoProgress {
@@ -15,33 +14,47 @@ interface VideoProgress {
   };
 }
 
+interface VideoData {
+  seconds: number;
+  duration: number;
+  lastUpdated: string;
+}
+
 interface VideoStore {
   videoProgress: VideoProgress;
+  // used to store last video (id) as progress is saved with Video progress
   lastVideoState: LastVideoState | null;
-  updateProgress: (videoId: string, seconds: number, duration: number) => void;
+  updateVideoProgress: (videoId: string, seconds: number, duration: number) => void;
   updateLastVideo: (state: LastVideoState) => void;
   loadSavedState: () => void;
+  loadSavedVideoState: (videoId: string) => VideoData;
 }
 
 export const useVideoStore = create<VideoStore>((set, get) => ({
   videoProgress: {},
   lastVideoState: null,
-  updateProgress: (videoId, seconds, duration) => {
-    const progressData = {
+  updateVideoProgress: (videoId, seconds, duration) => {
+    console.log('updateVideoProgress ',videoId, seconds);
+
+    const progressData : VideoData = {
       seconds,
       duration,
       lastUpdated: new Date().toISOString(),
     };
-    
-    set(state => ({
-      videoProgress: {
-        ...state.videoProgress,
-        [videoId]: progressData
-      }
-    }));
+
+    localStorage.setItem(videoId,JSON.stringify(progressData));
   },
+  loadSavedVideoState: (videoId) => {
+    const savedProgress = localStorage.getItem(videoId);
+
+    console.log('loadSavedVideoState ',videoId, savedProgress);
+
+    return savedProgress ? JSON.parse(savedProgress) : { second: 0, duration:1};
+  }, 
   updateLastVideo: (state) => {
-    set({ lastVideoState: state });
+    console.log('save last video ',state);
+    
+    localStorage.setItem('last_video',JSON.stringify(state));
   },
   loadSavedState: () => {
     try {
