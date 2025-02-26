@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 
 interface VideoPlayerProps {
@@ -17,12 +18,10 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
   const playerRef = useRef<any>(null);
   const progressIntervalRef = useRef<number | null>(null);
   const containerRef = useRef<string>(videoId);
-  const [duration, setDuration] = useState<number>(0);
   const startTimeRef = useRef<number>(startTime);
   const hasInitialSeekRef = useRef<boolean>(false);
+  const currentProgressRef = useRef<{ time: number; duration: number }>({ time: 0, duration: 0 });
   const playerContainerId = `youtube-player-${videoId}`;
-  const [currentTime, setCurrentTime] = useState(0);
-  const [videoDuration, setVideoDuration] = useState(0);
 
   useEffect(() => {
     console.log('VideoPlayer mounted/updated:', { videoId, startTime });
@@ -59,7 +58,6 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
           });
         } catch (e) {
           console.error('Error loading video:', e);
-          // Recreate player if loading fails
           playerRef.current = null;
           initializeNewPlayer();
         }
@@ -86,9 +84,8 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
             onReady: (event: any) => {
               const videoDuration = event.target.getDuration();
               console.log('Player ready, duration:', videoDuration);
-              setDuration(videoDuration);
+              currentProgressRef.current.duration = videoDuration;
               
-              // If we have a startTime, seek to it
               if (startTimeRef.current > 0) {
                 console.log('Seeking to startTime:', startTimeRef.current);
                 event.target.seekTo(startTimeRef.current, true);
@@ -116,10 +113,20 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
       initYouTubePlayer();
     }
 
+    // Cleanup function
     return () => {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
       }
+
+      // Save final progress on unmount
+      if (currentProgressRef.current.time > 0 && currentProgressRef.current.duration > 0) {
+        onProgressChange(
+          currentProgressRef.current.time,
+          currentProgressRef.current.duration
+        );
+      }
+
       if (playerRef.current && playerRef.current.destroy) {
         try {
           playerRef.current.destroy();
@@ -129,16 +136,7 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
         playerRef.current = null;
       }
     };
-  }, [videoId, startTime]);
-
-  useEffect(() => {
-    return () => {
-      if (currentTime > 0 && videoDuration > 0) {
-        console.log('Saving progress on unmount:', { currentTime, videoDuration });
-        onProgressChange(currentTime, videoDuration);
-      }
-    };
-  }, [currentTime, videoDuration, onProgressChange]);
+  }, [videoId, startTime, onProgressChange]);
 
   const onPlayerStateChange = (event: any) => {
     if (!videoId || !playerRef.current) return;
@@ -152,13 +150,21 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
         playerRef.current.seekTo(startTimeRef.current, true);
       }
 
+      // Clear existing interval if any
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+
+      // Set new interval for updating progress reference
       progressIntervalRef.current = window.setInterval(() => {
         if (playerRef.current?.getCurrentTime) {
           try {
             const time = Math.floor(playerRef.current.getCurrentTime());
             const duration = playerRef.current.getDuration();
-            setCurrentTime(time);
-            setVideoDuration(duration);
+            
+            // Update ref instead of state
+            currentProgressRef.current = { time, duration };
+            
           } catch (e) {
             console.error('Error getting player time:', e);
             if (progressIntervalRef.current) {
@@ -167,7 +173,14 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
           }
         }
       }, 1000);
-    } else {
+    } else if (event.data === window.YT.PlayerState.PAUSED || 
+               event.data === window.YT.PlayerState.ENDED) {
+      // Save progress when video is paused or ended
+      onProgressChange(
+        currentProgressRef.current.time,
+        currentProgressRef.current.duration
+      );
+      
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
       }
