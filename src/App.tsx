@@ -6,12 +6,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter as Router, Route, Routes } from "react-router-dom";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Index from "./pages/Index";
+import PlaylistDetails from "./pages/PlaylistDetails";
 import Settings from "./pages/Settings";
 import Statistics from "./pages/Statistics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
-
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -19,9 +19,10 @@ const App = () => (
       <ErrorBoundary>
         <Toaster />
         <Sonner />
-        <Router> {/* Change BrowserRouter to HashRouter */}
+        <Router>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/playlist/:playlistId" element={<PlaylistDetails />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/statistics" element={<Statistics />} />
             <Route path="*" element={<NotFound />} />
@@ -31,6 +32,5 @@ const App = () => (
     </TooltipProvider>
   </QueryClientProvider>
 );
-
 
 export default App;

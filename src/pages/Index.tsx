@@ -5,19 +5,17 @@ import { SectionCard } from "@/components/SectionCard";
 import { useState, useEffect } from "react";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { Header } from "@/components/Header";
-import { PlaylistView } from "@/components/PlaylistView";
+import { useNavigate } from "react-router-dom";
 import { useVideoStore } from "@/store/videoStore";
 
 const Index = () => {
-  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
-  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const navigate = useNavigate();
   const [isContinueWatchingActive, setIsContinueWatchingActive] = useState(true);
 
   const { 
     videoProgress, 
     lastVideoState, 
     updateProgress, 
-    updateLastVideo,
     loadSavedState 
   } = useVideoStore();
 
@@ -30,33 +28,23 @@ const Index = () => {
     loadSavedState();
   }, [loadSavedState]);
 
-  useEffect(() => {
-    if (selectedVideoId || selectedPlaylistId) {
-      setIsContinueWatchingActive(false);
-    }
-  }, [selectedVideoId, selectedPlaylistId]);
-
-  // Save to localStorage when component unmounts
+  // Save progress on unmount
   useEffect(() => {
     return () => {
-      localStorage.setItem('video_progress', JSON.stringify(videoProgress));
-      if (lastVideoState) {
-        localStorage.setItem('last_video', JSON.stringify(lastVideoState));
+      if (videoProgress) {
+        localStorage.setItem('video_progress', JSON.stringify(videoProgress));
       }
     };
-  }, [videoProgress, lastVideoState]);
+  }, [videoProgress]);
 
   const handleProgressChange = (videoId: string, seconds: number, duration: number) => {
     if (!duration || duration === 0) return;
-
     updateProgress(videoId, seconds, duration);
-    
-    const newLastVideoState = {
-      videoId,
-      playlistId: selectedPlaylistId || '',
-      position: seconds
-    };
-    updateLastVideo(newLastVideoState);
+  };
+
+  const handlePlaylistClick = (playlistId: string) => {
+    setIsContinueWatchingActive(false);
+    navigate(`/playlist/${playlistId}`);
   };
 
   if (isLoading) {
@@ -81,18 +69,11 @@ const Index = () => {
     );
   }
 
-  const selectedPlaylist = sections?.flatMap(s => s.playlists).find(p => p.name === selectedPlaylistId);
-
-  const normalizedProgress = Object.entries(videoProgress).reduce((acc, [id, data]) => {
-    acc[id] = data.seconds / data.duration;
-    return acc;
-  }, {} as { [key: string]: number });
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4">
-        {lastVideoState && !selectedVideoId && !selectedPlaylist && isContinueWatchingActive && (
+        {lastVideoState && isContinueWatchingActive && (
           <div className="w-full py-4 animate-fade-in">
             <h2 className="text-xl font-semibold mb-2">Continue Watching</h2>
             <VideoPlayer 
@@ -104,30 +85,15 @@ const Index = () => {
           </div>
         )}
 
-        {selectedPlaylist ? (
-          <PlaylistView
-            playlist={selectedPlaylist}
-            selectedVideoId={selectedVideoId}
-            videoProgress={normalizedProgress}
-            onBack={() => {
-              setSelectedPlaylistId(null);
-              setSelectedVideoId(null);
-              setIsContinueWatchingActive(true);
-            }}
-            onVideoSelect={setSelectedVideoId}
-            onProgressChange={handleProgressChange}
-          />
-        ) : (
-          <div className="space-y-8 py-4">
-            {sections.map((section) => (
-              <SectionCard
-                key={section.title}
-                section={section}
-                onPlaylistClick={setSelectedPlaylistId}
-              />
-            ))}
-          </div>
-        )}
+        <div className="space-y-8 py-4">
+          {sections.map((section) => (
+            <SectionCard
+              key={section.title}
+              section={section}
+              onPlaylistClick={handlePlaylistClick}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
