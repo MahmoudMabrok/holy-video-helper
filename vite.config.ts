@@ -12,10 +12,22 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   define: {
-    'process.env.NODE_ENV': '"development"'
+    'process.env.NODE_ENV': JSON.stringify('development')
   },
   plugins: [
-    react(),
+    react({
+      // Enable React Refresh and development mode features
+      swcOptions: {
+        jsc: {
+          transform: {
+            react: {
+              development: true,
+              refresh: true
+            }
+          }
+        }
+      }
+    }),
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),
