@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchContent } from "@/services/api";
 import { SectionCard } from "@/components/SectionCard";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { Header } from "@/components/Header";
 import { useNavigate } from "react-router-dom";
@@ -15,7 +15,6 @@ const Index = () => {
   const { 
     videoProgress, 
     lastVideoState, 
-    updateProgress, 
     loadSavedState 
   } = useVideoStore();
 
@@ -29,18 +28,13 @@ const Index = () => {
   }, [loadSavedState]);
 
   // Save progress on unmount
-  useEffect(() => {
-    return () => {
-      if (videoProgress) {
-        localStorage.setItem('video_progress', JSON.stringify(videoProgress));
-      }
-    };
-  }, [videoProgress]);
-
-  const handleProgressChange = (videoId: string, seconds: number, duration: number) => {
-    if (!duration || duration === 0) return;
-    updateProgress(videoId, seconds, duration);
-  };
+  // useEffect(() => {
+  //   return () => {
+  //     if (videoProgress) {
+  //       localStorage.setItem('video_progress', JSON.stringify(videoProgress));
+  //     }
+  //   };
+  // }, [videoProgress]);
 
   const handlePlaylistClick = (playlistId: string) => {
     setIsContinueWatchingActive(false);
@@ -69,18 +63,22 @@ const Index = () => {
     );
   }
 
+  console.log('Index lastVideoState', lastVideoState);
+
+  const lastVideoStarttime = lastVideoState?.seconds
+  
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4">
-        {lastVideoState && isContinueWatchingActive && (
+        {lastVideoState?.videoId && isContinueWatchingActive && (
           <div className="w-full py-4 animate-fade-in">
             <h2 className="text-xl font-semibold mb-2">Continue Watching</h2>
             <VideoPlayer 
               key={`continue-${lastVideoState.videoId}`}
               videoId={lastVideoState.videoId}
-              startTime={videoProgress[lastVideoState.videoId]?.seconds || 0}
-              onProgressChange={(seconds, duration) => handleProgressChange(lastVideoState.videoId, seconds, duration)}
+              startTime={lastVideoStarttime || 0}
+              onProgressChange={(seconds, duration) => {}}
             />
           </div>
         )}

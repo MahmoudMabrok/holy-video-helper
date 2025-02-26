@@ -4,6 +4,7 @@ import { VideoCard } from "@/components/VideoCard";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { VideoPlayer } from "@/components/VideoPlayer";
+import { useVideoStore } from "@/store/videoStore";
 
 interface PlaylistViewProps {
   playlist: Playlist;
@@ -23,24 +24,25 @@ const getVideoId = (url: string) => {
 export function PlaylistView({ 
   playlist, 
   selectedVideoId, 
-  videoProgress,
   onBack,
   onVideoSelect,
-  onProgressChange
 }: PlaylistViewProps) {
-  
-  const getStartTime = (videoId: string) => {
-    const progressData = localStorage.getItem('video_progress');
-    if (!progressData) return 0;
+    const {  
+      loadSavedVideoState, 
+    } = useVideoStore();
 
-    try {
-      const progress = JSON.parse(progressData);
-      return progress[videoId]?.seconds || 0;
-    } catch (e) {
-      console.error('Error getting start time:', e);
-      return 0;
-    }
-  };
+
+    const getStartTime = (videoId: string) => {
+      const progressData = loadSavedVideoState(videoId);
+      if (!progressData) return 0;
+  
+      try {
+        return progressData.seconds || 0;
+      } catch (e) {
+        console.error('Error getting start time:', e);
+        return 0;
+      }
+    };
 
   return (
     <div className="animate-fade-in space-y-4">
@@ -63,7 +65,7 @@ export function PlaylistView({
           <VideoPlayer 
             videoId={selectedVideoId}
             startTime={getStartTime(selectedVideoId)}
-            onProgressChange={(seconds, duration) => onProgressChange(selectedVideoId, seconds, duration)}
+            onProgressChange={(seconds, duration) => {}}
           />
         </div>
       )}
@@ -73,13 +75,16 @@ export function PlaylistView({
           {playlist.videos.map((video: Video) => {
             const videoId = getVideoId(video.url);
             if (!videoId) return null;
+
+            const videoData = loadSavedVideoState(videoId);
+            const progress = videoData.seconds / videoData.duration * 1.0
             
             return (
               <VideoCard
                 key={video.title}
                 video={video}
                 isSelected={videoId === selectedVideoId}
-                progress={videoProgress[videoId] || 0}
+                progress={progress || 0}
                 onClick={() => onVideoSelect(videoId)}
               />
             );
