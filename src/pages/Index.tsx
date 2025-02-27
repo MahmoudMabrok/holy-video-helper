@@ -10,6 +10,7 @@ import { useUsageTimerStore } from "@/store/usageTimerStore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Play } from "lucide-react";
+import { VideoPlayer } from "@/components/VideoPlayer";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -53,6 +54,13 @@ const Index = () => {
   };
 
   const handleContinueWatching = () => {
+    if (!lastVideoState) return;
+    
+    // Toggle the video player visibility
+    setShowLastVideo(!showLastVideo);
+  };
+
+  const navigateToPlaylist = () => {
     if (!lastVideoState) return;
     
     // Navigate to the playlist that contains this video
@@ -150,11 +158,27 @@ const Index = () => {
                       ({Math.round((lastVideo.progress / lastVideo.duration) * 100)}%)
                     </p>
                   </div>
-                  <Button onClick={handleContinueWatching}>
-                    <Play className="mr-2 h-4 w-4" />
-                    Continue Watching
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button onClick={handleContinueWatching}>
+                      <Play className="mr-2 h-4 w-4" />
+                      {showLastVideo ? 'Hide Player' : 'Play Video'}
+                    </Button>
+                    <Button variant="outline" onClick={navigateToPlaylist}>
+                      Go to Playlist
+                    </Button>
+                  </div>
                 </div>
+                
+                {showLastVideo && lastVideoState && (
+                  <div className="mt-4">
+                    <VideoPlayer 
+                      videoId={lastVideoState.videoId}
+                      startTime={lastVideo.progress}
+                      onProgressChange={() => {}}
+                      autoplay={false}
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
