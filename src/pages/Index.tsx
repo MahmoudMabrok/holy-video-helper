@@ -2,21 +2,23 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchContent } from "@/services/api";
 import { SectionCard } from "@/components/SectionCard";
-import { useState, useEffect, useCallback } from "react";
-import { VideoPlayer } from "@/components/VideoPlayer";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { useNavigate } from "react-router-dom";
 import { useVideoStore } from "@/store/videoStore";
 import { useUsageTimerStore } from "@/store/usageTimerStore";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Play } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [isContinueWatchingActive, setIsContinueWatchingActive] = useState(true);
+  const [showLastVideo, setShowLastVideo] = useState(false);
 
   const { 
-    videoProgress, 
     lastVideoState, 
-    loadSavedState 
+    loadSavedState,
+    loadSavedVideoState
   } = useVideoStore();
 
   const {
@@ -47,8 +49,59 @@ const Index = () => {
   }, [loadSavedState, loadSavedUsage, startTimer, stopTimer]);
 
   const handlePlaylistClick = (playlistId: string) => {
-    setIsContinueWatchingActive(false);
     navigate(`/playlist/${playlistId}`);
+  };
+
+  const handleContinueWatching = () => {
+    if (!lastVideoState) return;
+    
+    // Navigate to the playlist that contains this video
+    if (sections) {
+      for (const section of sections) {
+        for (const playlist of section.playlists) {
+          const videoExists = playlist.videos.some(v => {
+            const idMatch = v.url.match(/(?:v=|\/)([\w-]{11})(?:\?|$|&)/);
+            return idMatch && idMatch[1] === lastVideoState.videoId;
+          });
+          
+          if (videoExists) {
+            navigate(`/playlist/${playlist.name}`);
+            return;
+          }
+        }
+      }
+    }
+    
+    // If we couldn't find the playlist, go to recent videos
+    navigate('/recent');
+  };
+
+  const getLastVideoInfo = () => {
+    if (!lastVideoState || !sections) return { title: "Unknown", progress: 0, duration: 0 };
+    
+    const videoData = loadSavedVideoState(lastVideoState.videoId);
+    let videoTitle = "Unknown Video";
+    
+    // Find the video title
+    for (const section of sections) {
+      for (const playlist of section.playlists) {
+        const video = playlist.videos.find(v => {
+          const idMatch = v.url.match(/(?:v=|\/)([\w-]{11})(?:\?|$|&)/);
+          return idMatch && idMatch[1] === lastVideoState.videoId;
+        });
+        
+        if (video) {
+          videoTitle = video.title;
+          break;
+        }
+      }
+    }
+    
+    return {
+      title: videoTitle,
+      progress: videoData.seconds,
+      duration: videoData.duration
+    };
   };
 
   if (isLoading) {
@@ -73,23 +126,37 @@ const Index = () => {
     );
   }
 
-  console.log('Index lastVideoState', lastVideoState);
-
-  const lastVideoStarttime = lastVideoState?.seconds
+  const lastVideo = lastVideoState ? getLastVideoInfo() : null;
   
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4">
-        {lastVideoState?.videoId && isContinueWatchingActive && (
+        {lastVideo && (
           <div className="w-full py-4 animate-fade-in">
             <h2 className="text-xl font-semibold mb-2">Continue Watching</h2>
-            <VideoPlayer 
-              key={`continue-${lastVideoState.videoId}`}
-              videoId={lastVideoState.videoId}
-              startTime={lastVideoStarttime || 0}
-              onProgressChange={(seconds, duration) => {}}
-            />
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <h3 className="font-medium text-lg">{lastVideo.title}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Progress: {Math.floor(lastVideo.progress / 60)}:{(lastVideo.progress % 60)
+                        .toString()
+                        .padStart(2, "0")} / 
+                      {Math.floor(lastVideo.duration / 60)}:{(lastVideo.duration % 60)
+                        .toString()
+                        .padStart(2, "0")} 
+                      ({Math.round((lastVideo.progress / lastVideo.duration) * 100)}%)
+                    </p>
+                  </div>
+                  <Button onClick={handleContinueWatching}>
+                    <Play className="mr-2 h-4 w-4" />
+                    Continue Watching
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 

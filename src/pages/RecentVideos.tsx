@@ -1,7 +1,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Header } from "@/components/Header";
@@ -22,6 +22,7 @@ interface RecentVideo {
 export default function RecentVideos() {
   const navigate = useNavigate();
   const [recentVideos, setRecentVideos] = useState<RecentVideo[]>([]);
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   const { loadSavedVideoState, updateVideoProgress } = useVideoStore();
   
   const { data: sections } = useQuery({
@@ -121,14 +122,39 @@ export default function RecentVideos() {
                         {new Date(video.lastUpdated).toLocaleDateString()} {new Date(video.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
+                    <div className="mt-4">
+                      {activeVideoId === video.videoId ? (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setActiveVideoId(null)}
+                        >
+                          Hide Player
+                        </Button>
+                      ) : (
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          onClick={() => setActiveVideoId(video.videoId)}
+                        >
+                          <Play className="w-4 h-4 mr-2" />
+                          Watch Video
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <VideoPlayer
-                    videoId={video.videoId}
-                    startTime={video.seconds}
-                    onProgressChange={(seconds, duration) => 
-                      handleProgressChange(video.videoId, seconds, duration)
-                    }
-                  />
+                  {activeVideoId === video.videoId && (
+                    <div className="w-full">
+                      <VideoPlayer
+                        videoId={video.videoId}
+                        startTime={video.seconds}
+                        onProgressChange={(seconds, duration) => 
+                          handleProgressChange(video.videoId, seconds, duration)
+                        }
+                        autoplay={false}
+                      />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}

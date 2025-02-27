@@ -66,6 +66,7 @@ export function PlaylistView({
             videoId={selectedVideoId}
             startTime={getStartTime(selectedVideoId)}
             onProgressChange={(seconds, duration) => {}}
+            autoplay={true}
           />
         </div>
       )}

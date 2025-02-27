@@ -6,6 +6,7 @@ interface VideoPlayerProps {
   videoId: string;
   startTime?: number;
   onProgressChange: (seconds: number, duration: number) => void;
+  autoplay?: boolean;
 }
 
 declare global {
@@ -15,7 +16,12 @@ declare global {
   }
 }
 
-export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoPlayerProps) {
+export function VideoPlayer({ 
+  videoId, 
+  startTime = 0, 
+  onProgressChange,
+  autoplay = false 
+}: VideoPlayerProps) {
   const playerRef = useRef<any>(null);
   const progressIntervalRef = useRef<number | null>(null);
   const containerRef = useRef<string>(videoId);
@@ -63,7 +69,7 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
   }, [saveProgress]);
 
   useEffect(() => {
-    console.log("VideoPlayer mounted/updated:", { videoId, startTime });
+    console.log("VideoPlayer mounted/updated:", { videoId, startTime, autoplay });
     startTimeRef.current = startTime;
     hasInitialSeekRef.current = false;
 
@@ -87,14 +93,22 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
       console.log("Initializing player with:", {
         videoId,
         startTime: startTimeRef.current,
+        autoplay
       });
 
       if (playerRef.current) {
         try {
-          playerRef.current.loadVideoById({
-            videoId: videoId,
-            startSeconds: startTimeRef.current,
-          });
+          if (autoplay) {
+            playerRef.current.loadVideoById({
+              videoId: videoId,
+              startSeconds: startTimeRef.current,
+            });
+          } else {
+            playerRef.current.cueVideoById({
+              videoId: videoId,
+              startSeconds: startTimeRef.current,
+            });
+          }
           return;
         } catch (e) {
           console.error("Error loading video:", e);
@@ -112,7 +126,7 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
         playerRef.current = new window.YT.Player(playerContainerId, {
           videoId: videoId,
           playerVars: {
-            autoplay: 1,
+            autoplay: autoplay ? 1 : 0,
             controls: 1,
             modestbranding: 1,
             rel: 0,
@@ -129,8 +143,11 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
               if (startTimeRef.current > 0) {
                 console.log("Seeking to startTime:", startTimeRef.current);
                 event.target.seekTo(startTimeRef.current, true);
+                
+                if (autoplay) {
+                  event.target.playVideo();
+                }
               }
-              event.target.playVideo();
             },
             onStateChange: onPlayerStateChange,
             onError: (event: any) => {
@@ -154,7 +171,7 @@ export function VideoPlayer({ videoId, startTime = 0, onProgressChange }: VideoP
     }
 
     return cleanupPlayer;
-  }, [videoId, startTime, cleanupPlayer]);
+  }, [videoId, startTime, autoplay, cleanupPlayer]);
 
   const onPlayerStateChange = (event: any) => {
     if (!videoId || !playerRef.current) return;
