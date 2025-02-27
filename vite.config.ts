@@ -15,19 +15,7 @@ export default defineConfig(({ mode }) => ({
     'process.env.NODE_ENV': JSON.stringify('development')
   },
   plugins: [
-    react({
-      // Enable React Refresh and development mode features
-      swcOptions: {
-        jsc: {
-          transform: {
-            react: {
-              development: true,
-              refresh: true
-            }
-          }
-        }
-      }
-    }),
+    react(),
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),

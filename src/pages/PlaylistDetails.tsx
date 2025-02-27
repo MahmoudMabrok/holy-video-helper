@@ -57,14 +57,16 @@ export default function PlaylistDetails() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <PlaylistView
-        playlist={selectedPlaylist}
-        selectedVideoId={selectedVideoId}
-        videoProgress={normalizedProgress}
-        onBack={() => navigate('/')}
-        onVideoSelect={setSelectedVideoId}
-        onProgressChange={handleProgressChange}
-      />
+      <div className="container mx-auto px-4">
+        <PlaylistView
+          playlist={selectedPlaylist}
+          selectedVideoId={selectedVideoId}
+          videoProgress={normalizedProgress}
+          onBack={() => navigate('/')}
+          onVideoSelect={setSelectedVideoId}
+          onProgressChange={handleProgressChange}
+        />
+      </div>
     </div>
   );
 }
