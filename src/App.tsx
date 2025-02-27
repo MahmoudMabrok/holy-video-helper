@@ -9,27 +9,32 @@ import Index from "./pages/Index";
 import PlaylistDetails from "./pages/PlaylistDetails";
 import Settings from "./pages/Settings";
 import Statistics from "./pages/Statistics";
+import RecentVideos from "./pages/RecentVideos";
 import NotFound from "./pages/NotFound";
+import { ThemeProvider } from "./hooks/use-theme";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <ErrorBoundary>
-        <Toaster />
-        <Sonner />
-        <Router>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/playlist/:playlistId" element={<PlaylistDetails />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/statistics" element={<Statistics />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Router>
-      </ErrorBoundary>
-    </TooltipProvider>
+    <ThemeProvider defaultTheme="system">
+      <TooltipProvider>
+        <ErrorBoundary>
+          <Toaster />
+          <Sonner />
+          <Router>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/playlist/:playlistId" element={<PlaylistDetails />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/statistics" element={<Statistics />} />
+              <Route path="/recent" element={<RecentVideos />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Router>
+        </ErrorBoundary>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

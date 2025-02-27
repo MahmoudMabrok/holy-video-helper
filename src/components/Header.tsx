@@ -1,7 +1,8 @@
 
-import { Settings, BarChart } from "lucide-react";
+import { Settings, BarChart, History, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function Header() {
   const navigate = useNavigate();
@@ -13,7 +14,16 @@ export function Header() {
         <Button
           variant="ghost"
           size="icon"
+          onClick={() => navigate('/recent')}
+          title="Recent Videos"
+        >
+          <History className="w-5 h-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => navigate('/statistics')}
+          title="Statistics"
         >
           <BarChart className="w-5 h-5" />
         </Button>
@@ -21,9 +31,11 @@ export function Header() {
           variant="ghost"
           size="icon"
           onClick={() => navigate('/settings')}
+          title="Settings"
         >
           <Settings className="w-5 h-5" />
         </Button>
+        <ThemeToggle />
       </div>
     </div>
   );

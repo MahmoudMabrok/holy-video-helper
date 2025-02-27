@@ -7,6 +7,7 @@ import { VideoPlayer } from "@/components/VideoPlayer";
 import { Header } from "@/components/Header";
 import { useNavigate } from "react-router-dom";
 import { useVideoStore } from "@/store/videoStore";
+import { useUsageTimerStore } from "@/store/usageTimerStore";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -18,23 +19,32 @@ const Index = () => {
     loadSavedState 
   } = useVideoStore();
 
+  const {
+    startTimer,
+    stopTimer,
+    loadSavedUsage
+  } = useUsageTimerStore();
+
   const { data: sections, isLoading, error } = useQuery({
     queryKey: ["content"],
     queryFn: fetchContent,
   });
 
   useEffect(() => {
+    // Load saved video state
     loadSavedState();
-  }, [loadSavedState]);
-
-  // Save progress on unmount
-  // useEffect(() => {
-  //   return () => {
-  //     if (videoProgress) {
-  //       localStorage.setItem('video_progress', JSON.stringify(videoProgress));
-  //     }
-  //   };
-  // }, [videoProgress]);
+    
+    // Load saved usage data
+    loadSavedUsage();
+    
+    // Start the timer when the page loads
+    startTimer();
+    
+    // Stop the timer when the component unmounts
+    return () => {
+      stopTimer();
+    };
+  }, [loadSavedState, loadSavedUsage, startTimer, stopTimer]);
 
   const handlePlaylistClick = (playlistId: string) => {
     setIsContinueWatchingActive(false);

@@ -1,0 +1,144 @@
+
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Header } from "@/components/Header";
+import { VideoPlayer } from "@/components/VideoPlayer";
+import { useVideoStore } from "@/store/videoStore";
+import { useQuery } from "@tanstack/react-query";
+import { fetchContent } from "@/services/api";
+
+interface RecentVideo {
+  videoId: string;
+  title: string;
+  seconds: number;
+  duration: number;
+  lastUpdated: string;
+  playlistName?: string;
+}
+
+export default function RecentVideos() {
+  const navigate = useNavigate();
+  const [recentVideos, setRecentVideos] = useState<RecentVideo[]>([]);
+  const { loadSavedVideoState } = useVideoStore();
+  
+  const { data: sections } = useQuery({
+    queryKey: ["content"],
+    queryFn: fetchContent,
+  });
+
+  // Find video titles and playlists
+  const findVideoInfo = (videoId: string) => {
+    if (!sections) return { title: "Unknown Video", playlistName: undefined };
+    
+    for (const section of sections) {
+      for (const playlist of section.playlists) {
+        const video = playlist.videos.find(v => {
+          const idMatch = v.url.match(/(?:v=|\/)([\w-]{11})(?:\?|$|&)/);
+          return idMatch && idMatch[1] === videoId;
+        });
+        
+        if (video) {
+          return { title: video.title, playlistName: playlist.name };
+        }
+      }
+    }
+    
+    return { title: "Unknown Video", playlistName: undefined };
+  };
+
+  useEffect(() => {
+    // Get all localStorage keys
+    const allKeys = Object.keys(localStorage);
+    
+    // Filter for YouTube video IDs (11 characters)
+    const videoKeys = allKeys.filter(key => /^[A-Za-z0-9_-]{11}$/.test(key));
+    
+    // Get data for each video
+    const videos: RecentVideo[] = videoKeys.map(videoId => {
+      const data = loadSavedVideoState(videoId);
+      const { title, playlistName } = findVideoInfo(videoId);
+      
+      return {
+        videoId,
+        title,
+        playlistName,
+        seconds: data.seconds || 0,
+        duration: data.duration || 0,
+        lastUpdated: data.lastUpdated || new Date().toISOString()
+      };
+    });
+    
+    // Sort by last updated (newest first) and take the first 3
+    const sortedVideos = videos
+      .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
+      .slice(0, 3);
+    
+    setRecentVideos(sortedVideos);
+  }, [sections]);
+  
+  const handleProgressChange = (videoId: string, seconds: number, duration: number) => {
+    // We don't need to handle this for the recent videos page
+    console.log("Progress update in recent videos:", videoId, seconds, duration);
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center mb-6 gap-4">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/')}
+            className="group"
+          >
+            <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
+            Back
+          </Button>
+          <h1 className="text-2xl font-semibold">Recent Videos</h1>
+        </div>
+        
+        {recentVideos.length > 0 ? (
+          <div className="space-y-8">
+            {recentVideos.map((video) => (
+              <Card key={video.videoId} className="overflow-hidden">
+                <CardContent className="p-0">
+                  <div className="p-4 border-b">
+                    <h2 className="text-xl font-medium">{video.title}</h2>
+                    {video.playlistName && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        From: {video.playlistName}
+                      </p>
+                    )}
+                    <div className="flex justify-between items-center mt-2 text-sm text-muted-foreground">
+                      <span>
+                        {Math.floor(video.seconds / 60)}:{(video.seconds % 60).toString().padStart(2, '0')} / 
+                        {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}
+                      </span>
+                      <span>
+                        {new Date(video.lastUpdated).toLocaleDateString()} {new Date(video.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </div>
+                  <VideoPlayer
+                    videoId={video.videoId}
+                    startTime={video.seconds}
+                    onProgressChange={(seconds, duration) => 
+                      handleProgressChange(video.videoId, seconds, duration)
+                    }
+                  />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No recent videos found</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
