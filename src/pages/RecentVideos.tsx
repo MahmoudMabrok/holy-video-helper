@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ interface RecentVideo {
 export default function RecentVideos() {
   const navigate = useNavigate();
   const [recentVideos, setRecentVideos] = useState<RecentVideo[]>([]);
-  const { loadSavedVideoState } = useVideoStore();
+  const { loadSavedVideoState, updateVideoProgress } = useVideoStore();
   
   const { data: sections } = useQuery({
     queryKey: ["content"],
@@ -30,7 +30,7 @@ export default function RecentVideos() {
   });
 
   // Find video titles and playlists
-  const findVideoInfo = (videoId: string) => {
+  const findVideoInfo = useCallback((videoId: string) => {
     if (!sections) return { title: "Unknown Video", playlistName: undefined };
     
     for (const section of sections) {
@@ -47,7 +47,7 @@ export default function RecentVideos() {
     }
     
     return { title: "Unknown Video", playlistName: undefined };
-  };
+  }, [sections]);
 
   useEffect(() => {
     // Get all localStorage keys
@@ -77,11 +77,11 @@ export default function RecentVideos() {
       .slice(0, 3);
     
     setRecentVideos(sortedVideos);
-  }, [sections]);
+  }, [sections, findVideoInfo, loadSavedVideoState]);
   
   const handleProgressChange = (videoId: string, seconds: number, duration: number) => {
-    // We don't need to handle this for the recent videos page
-    console.log("Progress update in recent videos:", videoId, seconds, duration);
+    // Update progress for videos played on the recent videos page
+    updateVideoProgress(videoId, seconds, duration);
   };
 
   return (

@@ -34,27 +34,37 @@ export const useVideoStore = create<VideoStore>((set, get) => ({
   videoProgress: {},
   lastVideoState: null,
   updateVideoProgress: (videoId, seconds, duration) => {
-    console.log('updateVideoProgress ',videoId, seconds);
+    console.log('updateVideoProgress ', videoId, seconds);
 
-    const progressData : VideoData = {
+    const progressData: VideoData = {
       seconds,
       duration,
       lastUpdated: new Date().toISOString(),
     };
 
-    localStorage.setItem(videoId,JSON.stringify(progressData));
+    localStorage.setItem(videoId, JSON.stringify(progressData));
   },
   loadSavedVideoState: (videoId) => {
     const savedProgress = localStorage.getItem(videoId);
 
-    console.log('loadSavedVideoState ',videoId, savedProgress);
+    console.log('loadSavedVideoState ', videoId, savedProgress);
 
-    return savedProgress ? JSON.parse(savedProgress) : { second: 0, duration:1};
-  }, 
+    if (!savedProgress) {
+      return { seconds: 0, duration: 1, lastUpdated: new Date().toISOString() };
+    }
+
+    try {
+      return JSON.parse(savedProgress);
+    } catch (e) {
+      console.error('Error parsing saved video state:', e);
+      return { seconds: 0, duration: 1, lastUpdated: new Date().toISOString() };
+    }
+  },
   updateLastVideo: (state) => {
-    console.log('save last video ',state);
+    console.log('save last video ', state);
     
-    localStorage.setItem('last_video',JSON.stringify(state));
+    localStorage.setItem('last_video', JSON.stringify(state));
+    set({ lastVideoState: state });
   },
   loadSavedState: () => {
     try {
@@ -75,4 +85,3 @@ export const useVideoStore = create<VideoStore>((set, get) => ({
     }
   }
 }));
-
