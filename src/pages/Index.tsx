@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Play, BarChart3 } from "lucide-react";
 
 // Lazy load the VideoPlayer component
-const VideoPlayer = lazy(() => import("@/components/VideoPlayer"));
+const VideoPlayer = lazy(() => import("@/components/VideoPlayer").then(mod => ({ default: mod.VideoPlayer })));
 
 const Index = () => {
   const navigate = useNavigate();
@@ -34,7 +34,7 @@ const Index = () => {
     queryKey: ["content"],
     queryFn: fetchContent,
     staleTime: 5 * 60 * 1000, // 5 minutes cache
-    cacheTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
   });
 
   useEffect(() => {
@@ -165,19 +165,23 @@ const Index = () => {
       <div className="container mx-auto px-4">
         {/* Smart Banner with totals */}
         <div className="w-full py-4 animate-fade-up">
-          <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+          <Card className="bg-gradient-to-r from-purple-500/10 to-indigo-500/5 border-purple-500/20 shadow-md">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <BarChart3 className="h-8 w-8 text-primary mr-4" />
+                  <BarChart3 className="h-8 w-8 text-purple-500 mr-4" />
                   <div>
-                    <h2 className="text-lg font-semibold">Content Overview</h2>
+                    <h2 className="text-lg font-semibold text-purple-700 dark:text-purple-300">Content Overview</h2>
                     <p className="text-sm text-muted-foreground">
-                      Your library contains {totals.playlists} playlists with a total of {totals.videos} videos
+                      Your library contains <span className="font-medium text-purple-600 dark:text-purple-400">{totals.playlists}</span> playlists with a total of <span className="font-medium text-purple-600 dark:text-purple-400">{totals.videos}</span> videos
                     </p>
                   </div>
                 </div>
-                <Button variant="outline" onClick={() => navigate('/statistics')}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/statistics')}
+                  className="bg-white/50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-800/50 border-purple-200 dark:border-purple-700"
+                >
                   View Statistics
                 </Button>
               </div>
