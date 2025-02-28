@@ -22,7 +22,7 @@ export function VideoCard({ video, onClick, isSelected, progress = 0 }: VideoCar
   };
 
   const videoId = getVideoId(video.url);
-  const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/sddefault.jpg` : null;
+  const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
   const completionPercentage = Math.round(progress * 100);
 
   if (!videoId || !thumbnailUrl) {
