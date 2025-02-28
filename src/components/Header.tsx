@@ -9,7 +9,7 @@ export function Header() {
 
   return (
     <div className="sticky top-0 bg-background z-10 p-4 border-b flex justify-between items-center">
-      <h1 className="text-2xl font-semibold" onClick={() => navigate('/')} style={{cursor: 'pointer'}}>Video Library</h1>
+      <h1 className="text-2xl font-semibold" onClick={() => navigate('/')} style={{cursor: 'pointer'}}>Khelwatk</h1>
       <div className="flex gap-2">
         <Button
           variant="ghost"
