@@ -9,7 +9,7 @@ import { useVideoStore } from "@/store/videoStore";
 import { useUsageTimerStore } from "@/store/usageTimerStore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play } from "lucide-react";
+import { Play, BarChart3 } from "lucide-react";
 import { VideoPlayer } from "@/components/VideoPlayer";
 
 const Index = () => {
@@ -112,6 +112,25 @@ const Index = () => {
     };
   };
 
+  // Calculate total playlists and videos
+  const calculateTotals = () => {
+    if (!sections) return { playlists: 0, videos: 0 };
+    
+    let totalPlaylists = 0;
+    let totalVideos = 0;
+    
+    for (const section of sections) {
+      totalPlaylists += section.playlists.length;
+      for (const playlist of section.playlists) {
+        totalVideos += playlist.videos.length;
+      }
+    }
+    
+    return { playlists: totalPlaylists, videos: totalVideos };
+  };
+
+  const totals = calculateTotals();
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -140,6 +159,28 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4">
+        {/* Smart Banner with totals */}
+        <div className="w-full py-4 animate-fade-up">
+          <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <BarChart3 className="h-8 w-8 text-primary mr-4" />
+                  <div>
+                    <h2 className="text-lg font-semibold">Content Overview</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Your library contains {totals.playlists} playlists with a total of {totals.videos} videos
+                    </p>
+                  </div>
+                </div>
+                <Button variant="outline" onClick={() => navigate('/statistics')}>
+                  View Statistics
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {lastVideo && (
           <div className="w-full py-4 animate-fade-in">
             <h2 className="text-xl font-semibold mb-2">Continue Watching</h2>
