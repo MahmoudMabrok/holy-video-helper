@@ -9,6 +9,8 @@ import { VideoPlayer } from "@/components/VideoPlayer";
 import { useVideoStore } from "@/store/videoStore";
 import { useQuery } from "@tanstack/react-query";
 import { fetchContent } from "@/services/api";
+import { format } from "path";
+import { formatVideoProgress } from "@/lib/utils";
 
 interface RecentVideo {
   videoId: string;
@@ -61,6 +63,9 @@ export default function RecentVideos() {
     const videos: RecentVideo[] = videoKeys.map(videoId => {
       const data = loadSavedVideoState(videoId);
       const { title, playlistName } = findVideoInfo(videoId);
+
+      console.log(data);
+      
       
       return {
         videoId,
@@ -75,7 +80,7 @@ export default function RecentVideos() {
     // Sort by last updated (newest first) and take the first 3
     const sortedVideos = videos
       .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
-      .slice(0, 3);
+      .slice(0, 5);
     
     setRecentVideos(sortedVideos);
   }, [sections, findVideoInfo, loadSavedVideoState]);
@@ -140,8 +145,7 @@ export default function RecentVideos() {
                     </div>
                     <div className="flex justify-between items-center mt-2 text-sm text-muted-foreground">
                       <span>
-                        {Math.floor(video.seconds / 60)}:{(video.seconds % 60).toString().padStart(2, '0')} / 
-                        {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}
+                        { formatVideoProgress(video.seconds, video.duration)} 
                       </span>
                       <span>
                         {new Date(video.lastUpdated).toLocaleDateString()} {new Date(video.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

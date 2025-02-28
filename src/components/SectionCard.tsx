@@ -60,7 +60,7 @@ export function SectionCard({ section, onPlaylistClick }: SectionCardProps) {
   }
 
   return (
-    <Card className="animate-fade-up w-full">
+    <Card className="animate-fade-up w-full" >
       <CardHeader className="pb-2">
         <CardTitle>{section.title}</CardTitle>
       </CardHeader>

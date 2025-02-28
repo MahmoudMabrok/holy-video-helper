@@ -10,6 +10,7 @@ import { useUsageTimerStore } from "@/store/usageTimerStore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Play, BarChart3 } from "lucide-react";
+import { formatVideoProgress } from "@/lib/utils";
 
 // Lazy load the VideoPlayer component
 const VideoPlayer = lazy(() => import("@/components/VideoPlayer").then(mod => ({ default: mod.VideoPlayer })));
@@ -158,6 +159,8 @@ const Index = () => {
   }
 
   const lastVideo = lastVideoState ? getLastVideoInfo() : null;
+
+ 
   
   return (
     <div className="min-h-screen bg-background">
@@ -173,17 +176,10 @@ const Index = () => {
                   <div>
                     <h2 className="text-lg font-semibold text-purple-700 dark:text-purple-300">Content Overview</h2>
                     <p className="text-sm text-muted-foreground">
-                      Your library contains <span className="font-medium text-purple-600 dark:text-purple-400">{totals.playlists}</span> playlists with a total of <span className="font-medium text-purple-600 dark:text-purple-400">{totals.videos}</span> videos
+                      We have <span className="font-medium text-purple-600 dark:text-purple-400">{totals.playlists}</span> playlists with a total of <span className="font-medium text-purple-600 dark:text-purple-400">{totals.videos}</span> videos
                     </p>
                   </div>
                 </div>
-                <Button 
-                  variant="outline" 
-                  onClick={() => navigate('/statistics')}
-                  className="bg-white/50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-800/50 border-purple-200 dark:border-purple-700"
-                >
-                  View Statistics
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -196,15 +192,8 @@ const Index = () => {
               <CardContent className="p-4">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                   <div>
-                    <h3 className="font-medium text-lg">{lastVideo.title}</h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Progress: {Math.floor(lastVideo.progress / 60)}:{(lastVideo.progress % 60)
-                        .toString()
-                        .padStart(2, "0")} / 
-                      {Math.floor(lastVideo.duration / 60)}:{(lastVideo.duration % 60)
-                        .toString()
-                        .padStart(2, "0")} 
-                      ({Math.round((lastVideo.progress / lastVideo.duration) * 100)}%)
+                      {formatVideoProgress(lastVideo.progress, lastVideo.duration)}
                     </p>
                   </div>
                   <div className="flex gap-2">
