@@ -33,6 +33,7 @@ export function VideoPlayer({
   });
   const playerContainerId = `youtube-player-${videoId}`;
   const lastUpdateRef = useRef<number>(0);
+  const isPlayerInitialized = useRef<boolean>(false);
 
   const { updateVideoProgress, updateLastVideo } = useVideoStore();
 
@@ -65,6 +66,7 @@ export function VideoPlayer({
         console.error('Error destroying player:', e);
       }
       playerRef.current = null;
+      isPlayerInitialized.current = false;
     }
   }, [saveProgress]);
 
@@ -73,56 +75,72 @@ export function VideoPlayer({
     startTimeRef.current = startTime;
     hasInitialSeekRef.current = false;
 
+    // Create a container if it doesn't exist
     let container = document.getElementById(playerContainerId);
     if (!container) {
+      // Create a dedicated container for this specific video
       container = document.createElement("div");
       container.id = playerContainerId;
-      document
-        .getElementById("youtube-player-container")
-        ?.appendChild(container);
+      const mainContainer = document.getElementById("youtube-player-container");
+      if (mainContainer) {
+        // Clear any previous content if videoId changed
+        if (containerRef.current !== videoId) {
+          mainContainer.innerHTML = '';
+        }
+        mainContainer.appendChild(container);
+      }
     }
 
+    // Only destroy and recreate the player if the videoId changes
     if (containerRef.current !== videoId) {
       cleanupPlayer();
       containerRef.current = videoId;
+      isPlayerInitialized.current = false;
     }
 
     const initYouTubePlayer = () => {
       if (!videoId || !document.getElementById(playerContainerId)) return;
 
-      console.log("Initializing player with:", {
-        videoId,
-        startTime: startTimeRef.current,
-        autoplay
-      });
-
-      if (playerRef.current) {
-        try {
-          if (autoplay) {
-            playerRef.current.loadVideoById({
-              videoId: videoId,
-              startSeconds: startTimeRef.current,
-            });
-          } else {
-            playerRef.current.cueVideoById({
-              videoId: videoId,
-              startSeconds: startTimeRef.current,
-            });
+      // If we already have a valid player instance for this video, just update it
+      if (playerRef.current && isPlayerInitialized.current) {
+        console.log("Updating existing player with:", { videoId, startTime });
+        if (startTimeRef.current > 0 && !hasInitialSeekRef.current) {
+          try {
+            playerRef.current.seekTo(startTimeRef.current, true);
+            hasInitialSeekRef.current = true;
+            
+            if (autoplay) {
+              playerRef.current.playVideo();
+            }
+          } catch (e) {
+            console.error("Error seeking/playing video:", e);
+            initializeNewPlayer(); // Fallback to new player if there's an error
           }
-          return;
-        } catch (e) {
-          console.error("Error loading video:", e);
-          playerRef.current = null;
-          initializeNewPlayer();
         }
         return;
       }
 
+      console.log("Initializing new player with:", {
+        videoId,
+        startTime: startTimeRef.current,
+        autoplay
+      });
+      
       initializeNewPlayer();
     };
 
     const initializeNewPlayer = () => {
       try {
+        // If we have a player instance, destroy it first
+        if (playerRef.current) {
+          try {
+            playerRef.current.destroy();
+          } catch (e) {
+            console.error("Error destroying player:", e);
+          }
+          playerRef.current = null;
+        }
+
         playerRef.current = new window.YT.Player(playerContainerId, {
           videoId: videoId,
           playerVars: {
@@ -139,6 +157,7 @@ export function VideoPlayer({
               const videoDuration = event.target.getDuration();
               console.log("Player ready, duration:", videoDuration);
               currentProgressRef.current.duration = videoDuration;
+              isPlayerInitialized.current = true;
 
               if (startTimeRef.current > 0) {
                 console.log("Seeking to startTime:", startTimeRef.current);
@@ -171,7 +190,7 @@ export function VideoPlayer({
     }
 
     return cleanupPlayer;
-  }, [videoId, startTime, autoplay, cleanupPlayer]);
+  }, [videoId, autoplay, cleanupPlayer]); // Removed startTime from dependencies to prevent reloads
 
   const onPlayerStateChange = (event: any) => {
     if (!videoId || !playerRef.current) return;
