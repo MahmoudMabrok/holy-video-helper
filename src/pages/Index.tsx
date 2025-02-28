@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchContent } from "@/services/api";
 import { SectionCard } from "@/components/SectionCard";
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Header } from "@/components/Header";
 import { useNavigate } from "react-router-dom";
 import { useVideoStore } from "@/store/videoStore";
@@ -10,7 +10,9 @@ import { useUsageTimerStore } from "@/store/usageTimerStore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Play, BarChart3 } from "lucide-react";
-import { VideoPlayer } from "@/components/VideoPlayer";
+
+// Lazy load the VideoPlayer component
+const VideoPlayer = lazy(() => import("@/components/VideoPlayer"));
 
 const Index = () => {
   const navigate = useNavigate();
@@ -31,6 +33,8 @@ const Index = () => {
   const { data: sections, isLoading, error } = useQuery({
     queryKey: ["content"],
     queryFn: fetchContent,
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    cacheTime: 10 * 60 * 1000, // 10 minutes
   });
 
   useEffect(() => {
@@ -112,7 +116,7 @@ const Index = () => {
     };
   };
 
-  // Calculate total playlists and videos
+  // Calculate total playlists and videos - memoized by React Query's cache
   const calculateTotals = () => {
     if (!sections) return { playlists: 0, videos: 0 };
     
@@ -212,12 +216,14 @@ const Index = () => {
                 
                 {showLastVideo && lastVideoState && (
                   <div className="mt-4">
-                    <VideoPlayer 
-                      videoId={lastVideoState.videoId}
-                      startTime={lastVideo.progress}
-                      onProgressChange={() => {}}
-                      autoplay={false}
-                    />
+                    <Suspense fallback={<div className="w-full aspect-video bg-muted flex items-center justify-center">Loading player...</div>}>
+                      <VideoPlayer 
+                        videoId={lastVideoState.videoId}
+                        startTime={lastVideo.progress}
+                        onProgressChange={() => {}}
+                        autoplay={false}
+                      />
+                    </Suspense>
                   </div>
                 )}
               </CardContent>
