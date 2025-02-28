@@ -1,7 +1,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Play } from "lucide-react";
+import { ArrowLeft, Play, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Header } from "@/components/Header";
@@ -23,7 +23,7 @@ export default function RecentVideos() {
   const navigate = useNavigate();
   const [recentVideos, setRecentVideos] = useState<RecentVideo[]>([]);
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
-  const { loadSavedVideoState, updateVideoProgress } = useVideoStore();
+  const { loadSavedVideoState, updateVideoProgress, deleteVideoProgress } = useVideoStore();
   
   const { data: sections } = useQuery({
     queryKey: ["content"],
@@ -50,7 +50,7 @@ export default function RecentVideos() {
     return { title: "Unknown Video", playlistName: undefined };
   }, [sections]);
 
-  useEffect(() => {
+  const loadRecentVideos = useCallback(() => {
     // Get all localStorage keys
     const allKeys = Object.keys(localStorage);
     
@@ -79,10 +79,22 @@ export default function RecentVideos() {
     
     setRecentVideos(sortedVideos);
   }, [sections, findVideoInfo, loadSavedVideoState]);
+
+  useEffect(() => {
+    loadRecentVideos();
+  }, [loadRecentVideos]);
   
   const handleProgressChange = (videoId: string, seconds: number, duration: number) => {
     // Update progress for videos played on the recent videos page
     updateVideoProgress(videoId, seconds, duration);
+  };
+
+  const handleDeleteVideo = (videoId: string) => {
+    if (activeVideoId === videoId) {
+      setActiveVideoId(null);
+    }
+    deleteVideoProgress(videoId);
+    loadRecentVideos();
   };
 
   return (
@@ -107,12 +119,25 @@ export default function RecentVideos() {
               <Card key={video.videoId} className="overflow-hidden">
                 <CardContent className="p-0">
                   <div className="p-4 border-b">
-                    <h2 className="text-xl font-medium">{video.title}</h2>
-                    {video.playlistName && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        From: {video.playlistName}
-                      </p>
-                    )}
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h2 className="text-xl font-medium">{video.title}</h2>
+                        {video.playlistName && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            From: {video.playlistName}
+                          </p>
+                        )}
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="text-red-500 hover:text-red-700 hover:bg-red-100"
+                        onClick={() => handleDeleteVideo(video.videoId)}
+                        title="Remove from recent videos"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </Button>
+                    </div>
                     <div className="flex justify-between items-center mt-2 text-sm text-muted-foreground">
                       <span>
                         {Math.floor(video.seconds / 60)}:{(video.seconds % 60).toString().padStart(2, '0')} / 

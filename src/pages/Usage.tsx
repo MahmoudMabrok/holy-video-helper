@@ -44,6 +44,20 @@ export default function Usage() {
     }
   }, [dailyUsage, loadSavedUsage]);
 
+  // Helper function to format dates safely
+  const formatDate = (dateStr: string, options: Intl.DateTimeFormatOptions) => {
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) {
+        return "Unknown Date";
+      }
+      return date.toLocaleDateString(undefined, options);
+    } catch (e) {
+      console.error("Error formatting date:", e);
+      return "Unknown Date";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -107,11 +121,14 @@ export default function Usage() {
                     {dailyUsage.reduce((max, day) => day.minutes > max.minutes ? day : max, dailyUsage[0]).minutes} minutes
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {new Date(dailyUsage.reduce((max, day) => day.minutes > max.minutes ? day : max, dailyUsage[0]).day).toLocaleDateString(undefined, {
-                      weekday: 'long',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
+                    {formatDate(
+                      dailyUsage.reduce((max, day) => day.minutes > max.minutes ? day : max, dailyUsage[0]).day, 
+                      {
+                        weekday: 'long',
+                        month: 'long',
+                        day: 'numeric'
+                      }
+                    )}
                   </p>
                 </>
               ) : (
@@ -174,7 +191,7 @@ export default function Usage() {
                     <CardContent className="p-4 flex justify-between items-center">
                       <div>
                         <div className="font-medium">
-                          {new Date(day.day).toLocaleDateString(undefined, {
+                          {formatDate(day.day, {
                             weekday: 'long',
                             year: 'numeric',
                             month: 'long', 

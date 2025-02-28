@@ -28,6 +28,7 @@ interface VideoStore {
   updateLastVideo: (state: LastVideoState) => void;
   loadSavedState: () => void;
   loadSavedVideoState: (videoId: string) => VideoData;
+  deleteVideoProgress: (videoId: string) => void;
 }
 
 export const useVideoStore = create<VideoStore>((set, get) => ({
@@ -83,5 +84,23 @@ export const useVideoStore = create<VideoStore>((set, get) => ({
     } catch (e) {
       console.error('Error loading saved state:', e);
     }
+  },
+  deleteVideoProgress: (videoId) => {
+    console.log('Deleting video progress for:', videoId);
+    
+    // Remove from localStorage
+    localStorage.removeItem(videoId);
+    
+    // If this was the last video, clear that too
+    const { lastVideoState } = get();
+    if (lastVideoState && lastVideoState.videoId === videoId) {
+      localStorage.removeItem('last_video');
+      set({ lastVideoState: null });
+    }
+    
+    // Update the videoProgress state
+    const updatedProgress = { ...get().videoProgress };
+    delete updatedProgress[videoId];
+    set({ videoProgress: updatedProgress });
   }
 }));

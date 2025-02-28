@@ -52,6 +52,20 @@ export default function Statistics() {
     return dateB.getTime() - dateA.getTime();
   });
 
+  // Helper function to format dates safely
+  const formatDate = (dateStr: string, options: Intl.DateTimeFormatOptions) => {
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) {
+        return "Unknown Date";
+      }
+      return date.toLocaleDateString(undefined, options);
+    } catch (e) {
+      console.error("Error formatting date:", e);
+      return "Unknown Date";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -113,7 +127,7 @@ export default function Statistics() {
               <Card key={stat.day}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
-                    {new Date(stat.day).toLocaleDateString(undefined, {
+                    {formatDate(stat.day, {
                       weekday: 'long',
                       year: 'numeric',
                       month: 'long',
