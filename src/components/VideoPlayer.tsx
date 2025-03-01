@@ -1,6 +1,6 @@
 
 import { useVideoStore } from "@/store/videoStore";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface VideoPlayerProps {
   videoId: string;
@@ -36,8 +36,35 @@ export function VideoPlayer({
   const playerContainerId = `youtube-player-${videoId}`;
   const lastUpdateRef = useRef<number>(0);
   const isPlayerInitialized = useRef<boolean>(false);
+  const [videoQuality, setVideoQuality] = useState<string>(localStorage.getItem('video_quality') || 'auto');
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(parseFloat(localStorage.getItem('playback_speed') || '1'));
 
   const { updateVideoProgress, updateLastVideo } = useVideoStore();
+
+  // Effect to update settings when they change in localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const newQuality = localStorage.getItem('video_quality') || 'auto';
+      const newSpeed = parseFloat(localStorage.getItem('playback_speed') || '1');
+      
+      setVideoQuality(newQuality);
+      setPlaybackSpeed(newSpeed);
+      
+      // Apply new playback speed if player exists
+      if (playerRef.current && playerRef.current.setPlaybackRate) {
+        try {
+          playerRef.current.setPlaybackRate(newSpeed);
+        } catch (e) {
+          console.error('Error setting playback rate:', e);
+        }
+      }
+      
+      // Quality can't be changed after player initialization in most cases
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const saveProgress = useCallback(() => {
     updateVideoProgress(
@@ -125,7 +152,9 @@ export function VideoPlayer({
       console.log("Initializing new player with:", {
         videoId,
         startTime: startTimeRef.current,
-        autoplay
+        autoplay,
+        quality: videoQuality,
+        speed: playbackSpeed
       });
       
       initializeNewPlayer();
@@ -161,6 +190,16 @@ export function VideoPlayer({
               currentProgressRef.current.duration = videoDuration;
               isPlayerInitialized.current = true;
 
+              // Set playback speed
+              if (playbackSpeed !== 1) {
+                event.target.setPlaybackRate(playbackSpeed);
+              }
+              
+              // Set quality if not auto
+              if (videoQuality !== 'auto') {
+                event.target.setPlaybackQuality(videoQuality);
+              }
+
               if (startTimeRef.current > 0) {
                 console.log("Seeking to startTime:", startTimeRef.current);
                 event.target.seekTo(startTimeRef.current, true);
@@ -192,7 +231,7 @@ export function VideoPlayer({
     }
 
     return cleanupPlayer;
-  }, [videoId, autoplay, cleanupPlayer]); // Removed startTime from dependencies to prevent reloads
+  }, [videoId, autoplay, cleanupPlayer, videoQuality, playbackSpeed]); // Added quality and speed to dependencies
 
   const onPlayerStateChange = (event: any) => {
     if (!videoId || !playerRef.current) return;
