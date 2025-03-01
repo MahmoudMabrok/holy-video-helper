@@ -58,8 +58,6 @@ export function VideoPlayer({
           console.error('Error setting playback rate:', e);
         }
       }
-      
-      // Quality can't be changed after player initialization in most cases
     };
     
     window.addEventListener('storage', handleStorageChange);
@@ -192,11 +190,13 @@ export function VideoPlayer({
 
               // Set playback speed
               if (playbackSpeed !== 1) {
+                console.log("Setting playback speed to:", playbackSpeed);
                 event.target.setPlaybackRate(playbackSpeed);
               }
               
               // Set quality if not auto
               if (videoQuality !== 'auto') {
+                console.log("Setting video quality to:", videoQuality);
                 event.target.setPlaybackQuality(videoQuality);
               }
 

@@ -53,6 +53,10 @@ export default function Settings() {
       localStorage.setItem('data_url', data.dataUrl);
       localStorage.setItem('video_quality', data.videoQuality);
       localStorage.setItem('playback_speed', data.playbackSpeed);
+      
+      // Dispatch a custom event to notify other components
+      window.dispatchEvent(new Event('storage'));
+      
       toast({
         title: "Settings saved",
         description: "Your changes have been saved successfully."
