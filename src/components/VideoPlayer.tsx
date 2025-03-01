@@ -7,6 +7,7 @@ interface VideoPlayerProps {
   startTime?: number;
   onProgressChange: (seconds: number, duration: number) => void;
   autoplay?: boolean;
+  onVideoEnd?: () => void;
 }
 
 declare global {
@@ -20,7 +21,8 @@ export function VideoPlayer({
   videoId, 
   startTime = 0, 
   onProgressChange,
-  autoplay = false 
+  autoplay = false,
+  onVideoEnd
 }: VideoPlayerProps) {
   const playerRef = useRef<any>(null);
   const progressIntervalRef = useRef<number | null>(null);
@@ -222,9 +224,7 @@ export function VideoPlayer({
           }
         }
       }, 1000);
-    } else if (event.data === window.YT.PlayerState.PAUSED || 
-               event.data === window.YT.PlayerState.ENDED) {
-      
+    } else if (event.data === window.YT.PlayerState.PAUSED) {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
       }
@@ -233,8 +233,22 @@ export function VideoPlayer({
       const now = Date.now();
       if (now - lastUpdateRef.current > 500) {
         lastUpdateRef.current = now;
-        console.log('Saving progress on pause/end:', currentProgressRef.current);
+        console.log('Saving progress on pause:', currentProgressRef.current);
         saveProgress();
+      }
+    } else if (event.data === window.YT.PlayerState.ENDED) {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+      
+      // Save progress on video end
+      console.log('Saving progress on video end:', currentProgressRef.current);
+      saveProgress();
+      
+      // Call onVideoEnd callback if provided
+      if (onVideoEnd) {
+        console.log('Video ended, calling onVideoEnd callback');
+        onVideoEnd();
       }
     }
   };

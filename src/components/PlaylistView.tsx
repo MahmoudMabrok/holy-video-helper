@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { useVideoStore } from "@/store/videoStore";
+import { useState, useEffect } from "react";
 
 interface PlaylistViewProps {
   playlist: Playlist;
@@ -31,6 +32,20 @@ export function PlaylistView({
       loadSavedVideoState, 
     } = useVideoStore();
 
+    // Maintain a current index state to track the currently playing video
+    const [currentVideoIndex, setCurrentVideoIndex] = useState<number>(-1);
+
+    // Update the current index when selected video changes
+    useEffect(() => {
+      if (selectedVideoId) {
+        const index = playlist.videos.findIndex(
+          (video) => getVideoId(video.url) === selectedVideoId
+        );
+        if (index !== -1) {
+          setCurrentVideoIndex(index);
+        }
+      }
+    }, [selectedVideoId, playlist.videos]);
 
     const getStartTime = (videoId: string) => {
       const progressData = loadSavedVideoState(videoId);
@@ -41,6 +56,23 @@ export function PlaylistView({
       } catch (e) {
         console.error('Error getting start time:', e);
         return 0;
+      }
+    };
+
+    const handleVideoEnd = () => {
+      console.log('Video ended, current index:', currentVideoIndex);
+      
+      // If there's a next video in the playlist, play it
+      if (currentVideoIndex >= 0 && currentVideoIndex < playlist.videos.length - 1) {
+        const nextVideo = playlist.videos[currentVideoIndex + 1];
+        const nextVideoId = getVideoId(nextVideo.url);
+        
+        if (nextVideoId) {
+          console.log('Auto-playing next video:', nextVideoId);
+          onVideoSelect(nextVideoId);
+        }
+      } else {
+        console.log('Reached the end of the playlist');
       }
     };
 
@@ -67,6 +99,7 @@ export function PlaylistView({
             startTime={getStartTime(selectedVideoId)}
             onProgressChange={(seconds, duration) => {}}
             autoplay={true}
+            onVideoEnd={handleVideoEnd}
           />
         </div>
       )}

@@ -22,11 +22,11 @@ export function SectionCard({ section, onPlaylistClick }: SectionCardProps) {
 
   if (isMobile) {
     return (
-      <Card className="animate-fade-up">
-        <CardHeader className="pb-0">
+      <Card className="animate-fade-up p-2">
+        <CardHeader className="pb-0 px-4">
           <CardTitle>{section.title}</CardTitle>
         </CardHeader>
-        <CardContent className="pt-2">
+        <CardContent className="pt-2 px-4">
           <div className="grid grid-cols-2 gap-2">
             {section.playlists.map((playlist) => {
               const thumbnail = getFirstVideoThumbnail(playlist.videos[0]?.url);
@@ -35,7 +35,7 @@ export function SectionCard({ section, onPlaylistClick }: SectionCardProps) {
                   key={playlist.name}
                   onClick={() => onPlaylistClick(playlist.name)}
                 >
-                  <Card className="overflow-hidden cursor-pointer hover:scale-105 transition-transform">
+                  <Card className="overflow-hidden cursor-pointer hover:shadow-md transition-all">
                     <div className="aspect-video relative">
                       <img
                         src={thumbnail || '/placeholder.svg'}
@@ -60,11 +60,11 @@ export function SectionCard({ section, onPlaylistClick }: SectionCardProps) {
   }
 
   return (
-    <Card className="animate-fade-up w-full" >
-      <CardHeader className="pb-2">
+    <Card className="animate-fade-up w-full p-4">
+      <CardHeader className="pb-2 px-4">
         <CardTitle>{section.title}</CardTitle>
       </CardHeader>
-      <CardContent className="pt-2">
+      <CardContent className="pt-2 px-4">
         <ScrollArea className="max-h-[80vh]">
           <div className="grid grid-cols-3 gap-4 pr-4">
             {section.playlists.map((playlist) => (

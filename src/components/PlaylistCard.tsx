@@ -19,14 +19,14 @@ export function PlaylistCard({ playlist, onClick }: PlaylistCardProps) {
 
   return (
     <Card 
-      className="cursor-pointer transition-all duration-300 hover:scale-105 group overflow-hidden"
+      className="cursor-pointer hover-card group overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
       onClick={onClick}
     >
-      <div className="aspect-video relative">
+      <div className="aspect-video relative overflow-hidden">
         <img
           src={thumbnail || '/placeholder.svg'}
           alt={playlist.name}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
           <div className="text-white font-medium">Play Playlist</div>
