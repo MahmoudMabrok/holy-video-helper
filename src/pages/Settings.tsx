@@ -42,7 +42,7 @@ export default function Settings() {
   const navigate = useNavigate();
   const form = useForm<SettingsForm>({
     defaultValues: {
-      dataUrl: localStorage.getItem('data_url') || 'https://raw.githubusercontent.com/MahmoudMabrok/MyDataCenter/main/ramadan.json',
+      dataUrl: localStorage.getItem('data_url') || 'https://raw.githubusercontent.com/MahmoudMabrok/MyDataCenter/main/',
       videoQuality: localStorage.getItem('video_quality') || 'auto',
       playbackSpeed: localStorage.getItem('playback_speed') || '1',
     }
@@ -90,7 +90,7 @@ export default function Settings() {
           <CardHeader>
             <CardTitle>Data Source</CardTitle>
             <CardDescription>
-              Configure the URL where your content data is stored.
+              Configure the base URL where your content data is stored.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -101,12 +101,12 @@ export default function Settings() {
                   name="dataUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Data URL</FormLabel>
+                      <FormLabel>Base URL</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter data URL" {...field} />
+                        <Input placeholder="Enter base URL" {...field} />
                       </FormControl>
                       <FormDescription>
-                        Enter the URL of your JSON data source.
+                        Enter the base URL of your JSON data source. The app will load "data.json" from this URL, and playlist files as "[playlist_id].json".
                       </FormDescription>
                     </FormItem>
                   )}

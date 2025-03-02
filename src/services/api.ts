@@ -34,8 +34,11 @@ export interface CategoryApi {
 
 export async function fetchContent(): Promise<Section[]> {
   try {
-    const dataUrl = localStorage.getItem('data_url') || 
-      "https://raw.githubusercontent.com/MahmoudMabrok/MyDataCenter/main/ramadan.json";
+    const baseUrl = localStorage.getItem('data_url') || 
+      "https://raw.githubusercontent.com/MahmoudMabrok/MyDataCenter/main/";
+    const dataUrl = `${baseUrl}data.json`;
+    console.log(`Fetching content from: ${dataUrl}`);
+    
     const response = await fetch(dataUrl);
 
     if (!response.ok) throw new Error("Failed to fetch content");
@@ -69,7 +72,7 @@ export async function fetchContent(): Promise<Section[]> {
 
 export async function fetchPlaylistVideos(playlistId: string): Promise<Video[]> {
   try {
-    const baseUrl = localStorage.getItem('data_url')?.split('ramadan.json')[0] || 
+    const baseUrl = localStorage.getItem('data_url') || 
       "https://raw.githubusercontent.com/MahmoudMabrok/MyDataCenter/main/";
     
     const playlistUrl = `${baseUrl}${playlistId}.json`;
