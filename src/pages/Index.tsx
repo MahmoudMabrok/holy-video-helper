@@ -28,7 +28,7 @@ const Index = () => {
   const { startTimer, stopTimer, loadSavedUsage } = useUsageTimerStore();
 
   const {
-    data: sections,
+    data,
     isLoading,
     error,
   } = useQuery({
@@ -37,6 +37,8 @@ const Index = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes cache
     gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
   });
+
+  const sections = data?.sections;
 
   useEffect(() => {
     // Load saved video state
@@ -116,17 +118,17 @@ const Index = () => {
   const calculateTotals = () => {
     if (!sections) return { playlists: 0, videos: 0 };
 
-    let totalPlaylists = 0;
-    let totalVideos = 0;
+    // let totalPlaylists = 0;
+    // let totalVideos = 0;
 
-    for (const section of sections) {
-      totalPlaylists += section.playlists.length;
-      for (const playlist of section.playlists) {
-        totalVideos += playlist.videos.length;
-      }
-    }
+    // for (const section of sections) {
+    //   totalPlaylists += section.playlists.length;
+    //   for (const playlist of section.playlists) {
+    //     totalVideos += playlist.videos.length;
+    //   }
+    // }
 
-    return { playlists: totalPlaylists, videos: totalVideos };
+    return { playlists: data.playlist_count, videos: data.total_video_count };
   };
 
   const totals = calculateTotals();

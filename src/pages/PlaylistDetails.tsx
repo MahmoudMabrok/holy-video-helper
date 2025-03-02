@@ -13,24 +13,15 @@ export default function PlaylistDetails() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
-  const [playlistName, setPlaylistName] = useState<string>(searchParams.get('name') || '');
+  const [playlistName] = useState<string>(searchParams.get('name') || '');
   
   const { 
     videoProgress, 
   } = useVideoStore();
 
-  // Fetch playlist videos directly using the playlist ID
   const { data: playlistVideos, isLoading: videosLoading, error: videosError } = useQuery({
     queryKey: ["playlist", playlistId],
     queryFn: () => playlistId ? fetchPlaylistVideos(playlistId) : Promise.resolve([]),
-    enabled: !!playlistId,
-    onSuccess: (data) => {
-      // If we don't have a name from the URL and the videos load successfully,
-      // we could set a generic playlist name based on the first video or the ID
-      if (!playlistName && data && data.length > 0) {
-        setPlaylistName(`Playlist ${playlistId}`);
-      }
-    }
   });
 
   useEffect(() => {

@@ -33,7 +33,13 @@ export interface CategoryApi {
   playlist_id: string;
 }
 
-export async function fetchContent(): Promise<Section[]> {
+export interface Content {
+  sections: Section[];
+  playlist_count: number;
+  total_video_count: number;
+}
+
+export async function fetchContent(): Promise<Content> {
   try {
     const baseUrl = localStorage.getItem('data_url') || 
       "https://raw.githubusercontent.com/MahmoudMabrok/MyDataCenter/main/";
@@ -64,7 +70,7 @@ export async function fetchContent(): Promise<Section[]> {
       };
     });
 
-    return sections;
+    return { sections , playlist_count: data.playlist_count , total_video_count: data.total_video_count };
   } catch (error) {
     console.error("Error fetching content:", error);
     throw error;

@@ -27,15 +27,18 @@ export default function RecentVideos() {
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   const { loadSavedVideoState, updateVideoProgress, deleteVideoProgress } = useVideoStore();
   
-  const { data: sections } = useQuery({
+  const { data } = useQuery({
     queryKey: ["content"],
     queryFn: fetchContent,
   });
 
+  const sections = data?.sections;
+
   // Find video titles and playlists
   const findVideoInfo = useCallback((videoId: string) => {
     if (!sections) return { title: "Unknown Video", playlistName: undefined };
-    
+
+
     for (const section of sections) {
       for (const playlist of section.playlists) {
         const video = playlist.videos.find(v => {
@@ -58,14 +61,15 @@ export default function RecentVideos() {
     
     // Filter for YouTube video IDs (11 characters)
     const videoKeys = allKeys.filter(key => /^[A-Za-z0-9_-]{11}$/.test(key));
+
+    console.log('videoKeys', videoKeys);
     
     // Get data for each video
     const videos: RecentVideo[] = videoKeys.map(videoId => {
       const data = loadSavedVideoState(videoId);
       const { title, playlistName } = findVideoInfo(videoId);
 
-      console.log(data);
-      
+      console.log('saved data', data , title, playlistName);
       
       return {
         videoId,
@@ -83,7 +87,7 @@ export default function RecentVideos() {
       .slice(0, 5);
     
     setRecentVideos(sortedVideos);
-  }, [sections, findVideoInfo, loadSavedVideoState]);
+  }, [findVideoInfo, loadSavedVideoState]);
 
   useEffect(() => {
     loadRecentVideos();

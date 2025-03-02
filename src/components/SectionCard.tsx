@@ -10,13 +10,6 @@ interface SectionCardProps {
   onPlaylistClick: (playlistId: string, playlistName: string) => void;
 }
 
-const getFirstVideoThumbnail = (url: string | undefined) => {
-  if (!url) return null;
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-  const match = url.match(regExp);
-  return match && match[2].length === 11 ? `https://img.youtube.com/vi/${match[2]}/mqdefault.jpg` : null;
-};
-
 export function SectionCard({ section, onPlaylistClick }: SectionCardProps) {
   const isMobile = useIsMobile();
 
@@ -68,7 +61,7 @@ export function SectionCard({ section, onPlaylistClick }: SectionCardProps) {
               <PlaylistCard
                 key={playlist.name}
                 playlist={playlist}
-                onClick={() => onPlaylistClick(playlist.playlist_id, playlist.name)}
+                onClick={() => onPlaylistClick(playlist.playlist_id,playlist.name)}
               />
             ))}
           </div>
