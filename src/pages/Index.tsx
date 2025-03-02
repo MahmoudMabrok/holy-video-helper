@@ -147,7 +147,7 @@ const Index = () => {
               Error Loading Content
             </h1>
             <p className="text-muted-foreground">
-              Please try refreshing the page.
+              Please try refreshing the page. If the issue persists, please clear data from the settings page.
             </p>
           </div>
         </div>
