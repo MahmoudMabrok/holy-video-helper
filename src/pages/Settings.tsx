@@ -88,15 +88,31 @@ export default function Settings() {
         // Remove collected keys
         videoKeysToRemove.forEach(key => localStorage.removeItem(key));
         
+        // Reset settings data
+        const defaultUrl = 'https://raw.githubusercontent.com/MahmoudMabrok/MyDataCenter/main/';
+        localStorage.setItem('data_url', defaultUrl);
+        localStorage.setItem('video_quality', 'auto');
+        localStorage.setItem('playback_speed', '1');
+        
+        // Reset form values
+        form.reset({
+          dataUrl: defaultUrl,
+          videoQuality: 'auto',
+          playbackSpeed: '1'
+        });
+        
         // Reset video store
         useVideoStore.getState().loadSavedState();
         
         // Reset usage timer store
         useUsageTimerStore.getState().loadSavedUsage();
         
+        // Dispatch storage event to notify other components
+        window.dispatchEvent(new Event('storage'));
+        
         toast({
           title: "Data cleared",
-          description: "All saved video progress and usage data have been reset."
+          description: "All saved video progress and settings have been reset to defaults."
         });
       } catch (error) {
         toast({
