@@ -132,9 +132,6 @@ const Index = () => {
   }
 
   if (error || !sections) {
-    const defaultUrl = 'https://raw.githubusercontent.com/MahmoudMabrok/MyDataCenter/main/';
-    localStorage.setItem('data_url', defaultUrl);
-
     return (
       <div className="min-h-screen bg-background">
         <Header />
