@@ -106,7 +106,7 @@ export default function Settings() {
                         <Input placeholder="Enter base URL" {...field} />
                       </FormControl>
                       <FormDescription>
-                        Enter the base URL of your JSON data source. The app will load "data.json" from this URL, and playlist files as "[playlist_id].json".
+                        Enter the base URL of your JSON data source. The app will load "data.json" from this URL, and playlist files as "playlists/[playlist_id].json".
                       </FormDescription>
                     </FormItem>
                   )}
