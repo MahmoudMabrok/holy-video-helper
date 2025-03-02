@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useVideoStore } from "@/store/videoStore";
+import { useUsageTimerStore } from "@/store/usageTimerStore";
 
 interface SettingsForm {
   dataUrl: string;
@@ -68,6 +70,57 @@ export default function Settings() {
         description: "Failed to save settings.",
         variant: "destructive"
       });
+    }
+  };
+
+  const clearAllData = () => {
+    if (window.confirm("Are you sure you want to clear all data? This will delete all saved video progress and reset all settings.")) {
+      try {
+        // Clear video progress data
+        const videoKeysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('last_video') || key.includes('video_progress') || key.includes('daily_usage'))) {
+            videoKeysToRemove.push(key);
+          }
+        }
+        
+        // Remove collected keys
+        videoKeysToRemove.forEach(key => localStorage.removeItem(key));
+        
+        // Reset settings data
+        const defaultUrl = 'https://raw.githubusercontent.com/MahmoudMabrok/MyDataCenter/main/';
+        localStorage.setItem('data_url', defaultUrl);
+        localStorage.setItem('video_quality', 'auto');
+        localStorage.setItem('playback_speed', '1');
+        
+        // Reset form values
+        form.reset({
+          dataUrl: defaultUrl,
+          videoQuality: 'auto',
+          playbackSpeed: '1'
+        });
+        
+        // Reset video store
+        useVideoStore.getState().loadSavedState();
+        
+        // Reset usage timer store
+        useUsageTimerStore.getState().loadSavedUsage();
+        
+        // Dispatch storage event to notify other components
+        window.dispatchEvent(new Event('storage'));
+        
+        toast({
+          title: "Data cleared",
+          description: "All saved video progress and settings have been reset to defaults."
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to clear data.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -172,7 +225,17 @@ export default function Settings() {
                   )}
                 />
                 
-                <Button type="submit">Save Changes</Button>
+                <div className="flex gap-4">
+                  <Button type="submit">Save Changes</Button>
+                  <Button 
+                    type="button" 
+                    variant="destructive" 
+                    onClick={clearAllData}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Clear All Data
+                  </Button>
+                </div>
               </form>
             </Form>
           </CardContent>

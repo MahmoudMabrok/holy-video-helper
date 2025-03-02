@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Play, Trash2 } from "lucide-react";
@@ -37,7 +36,6 @@ export default function RecentVideos() {
   // Find video titles and playlists
   const findVideoInfo = useCallback((videoId: string) => {
     if (!sections) return { title: "Unknown Video", playlistName: undefined };
-
 
     for (const section of sections) {
       for (const playlist of section.playlists) {
@@ -95,7 +93,7 @@ export default function RecentVideos() {
   
   const handleProgressChange = (videoId: string, seconds: number, duration: number) => {
     // Update progress for videos played on the recent videos page
-    updateVideoProgress(videoId, seconds, duration);
+    updateVideoProgress(videoId, "", seconds, duration);
   };
 
   const handleDeleteVideo = (videoId: string) => {
