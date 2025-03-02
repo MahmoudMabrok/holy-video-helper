@@ -111,7 +111,7 @@ export function PlaylistView({
             if (!videoId) return null;
 
             const videoData = loadSavedVideoState(videoId);
-            const progress = videoData.seconds / videoData.duration * 1.0
+            const progress = videoData && videoData.duration ? videoData.seconds / videoData.duration : 0;
             
             return (
               <VideoCard

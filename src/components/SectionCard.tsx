@@ -7,7 +7,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SectionCardProps {
   section: Section;
-  onPlaylistClick: (playlistId: string) => void;
+  onPlaylistClick: (playlistId: string, playlistName: string) => void;
 }
 
 const getFirstVideoThumbnail = (url: string | undefined) => {
@@ -31,7 +31,7 @@ export function SectionCard({ section, onPlaylistClick }: SectionCardProps) {
             {section.playlists.map((playlist) => (
               <div
                 key={playlist.name}
-                onClick={() => onPlaylistClick(playlist.name)}
+                onClick={() => onPlaylistClick(playlist.playlist_id, playlist.name)}
               >
                 <Card className="overflow-hidden cursor-pointer hover:shadow-md transition-all">
                   <div className="aspect-video relative">
@@ -68,7 +68,7 @@ export function SectionCard({ section, onPlaylistClick }: SectionCardProps) {
               <PlaylistCard
                 key={playlist.name}
                 playlist={playlist}
-                onClick={() => onPlaylistClick(playlist.name)}
+                onClick={() => onPlaylistClick(playlist.playlist_id, playlist.name)}
               />
             ))}
           </div>

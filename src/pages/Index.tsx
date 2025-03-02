@@ -10,7 +10,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Play, BarChart3 } from "lucide-react";
 import { formatVideoProgress } from "@/lib/utils";
-import { log } from "console";
 
 // Lazy load the VideoPlayer component
 const VideoPlayer = lazy(() =>
@@ -55,10 +54,11 @@ const Index = () => {
     };
   }, [loadSavedState, loadSavedUsage, startTimer, stopTimer]);
 
-  const handlePlaylistClick = (playlistId: string) => {
-    console.log("Navigating to playlist", playlistId);
+  const handlePlaylistClick = (playlistId: string, playlistName: string) => {
+    console.log("Navigating to playlist", playlistId, playlistName);
     
-    navigate(`/playlist/${playlistId}`);
+    // Navigate using the playlist ID with the name as a URL parameter
+    navigate(`/playlist/${playlistId}?name=${encodeURIComponent(playlistName)}`);
   };
 
   const handleContinueWatching = () => {

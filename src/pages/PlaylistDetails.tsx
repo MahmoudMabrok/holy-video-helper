@@ -1,7 +1,7 @@
 
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { fetchContent, fetchPlaylistVideos } from "@/services/api";
+import { fetchPlaylistVideos } from "@/services/api";
 import { useState, useEffect } from "react";
 import { PlaylistView } from "@/components/PlaylistView";
 import { Header } from "@/components/Header";
@@ -9,27 +9,28 @@ import { useVideoStore } from "@/store/videoStore";
 import { toast } from "sonner";
 
 export default function PlaylistDetails() {
-  const { playlistId } = useParams();
+  const { playlistId } = useParams<{ playlistId: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const [playlistName, setPlaylistName] = useState<string>(searchParams.get('name') || '');
   
   const { 
     videoProgress, 
   } = useVideoStore();
 
-  // Fetch sections to get the playlist metadata
-  const { data: sections, isLoading: sectionsLoading } = useQuery({
-    queryKey: ["content"],
-    queryFn: fetchContent,
-  });
-
-  const selectedPlaylistMeta = sections?.flatMap(s => s.playlists).find(p => p.name === playlistId);
-  
-  // Fetch playlist videos using the playlist_id
+  // Fetch playlist videos directly using the playlist ID
   const { data: playlistVideos, isLoading: videosLoading, error: videosError } = useQuery({
-    queryKey: ["playlist", selectedPlaylistMeta?.playlist_id],
-    queryFn: () => selectedPlaylistMeta?.playlist_id ? fetchPlaylistVideos(selectedPlaylistMeta.playlist_id) : Promise.resolve([]),
-    enabled: !!selectedPlaylistMeta?.playlist_id,
+    queryKey: ["playlist", playlistId],
+    queryFn: () => playlistId ? fetchPlaylistVideos(playlistId) : Promise.resolve([]),
+    enabled: !!playlistId,
+    onSuccess: (data) => {
+      // If we don't have a name from the URL and the videos load successfully,
+      // we could set a generic playlist name based on the first video or the ID
+      if (!playlistName && data && data.length > 0) {
+        setPlaylistName(`Playlist ${playlistId}`);
+      }
+    }
   });
 
   useEffect(() => {
@@ -45,7 +46,7 @@ export default function PlaylistDetails() {
     if (!duration || duration === 0) return;
   };
 
-  if (sectionsLoading || (selectedPlaylistMeta?.playlist_id && videosLoading)) {
+  if (videosLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -58,7 +59,7 @@ export default function PlaylistDetails() {
     );
   }
 
-  if (!selectedPlaylistMeta) {
+  if (!playlistId || videosError) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -74,7 +75,9 @@ export default function PlaylistDetails() {
 
   // Create a complete playlist object with metadata and videos
   const completePlaylist = {
-    ...selectedPlaylistMeta,
+    name: playlistName,
+    thunmbnail: playlistVideos && playlistVideos.length > 0 ? playlistVideos[0].url : '',
+    playlist_id: playlistId,
     videos: playlistVideos || []
   };
 
@@ -91,7 +94,6 @@ export default function PlaylistDetails() {
           playlist={completePlaylist}
           selectedVideoId={selectedVideoId}
           videoProgress={normalizedProgress}
-          playlistId={playlistId}
           onBack={() => navigate('/')}
           onVideoSelect={setSelectedVideoId}
           onProgressChange={handleProgressChange}
