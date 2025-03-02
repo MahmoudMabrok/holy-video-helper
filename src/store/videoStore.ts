@@ -4,6 +4,7 @@ import { create } from 'zustand';
 interface LastVideoState {
   videoId: string;
   seconds: number;
+  playlist_id: string;
 }
 
 interface VideoProgress {
@@ -18,13 +19,14 @@ interface VideoData {
   seconds: number;
   duration: number;
   lastUpdated: string;
+  playlist_id: string;
 }
 
 interface VideoStore {
   videoProgress: VideoProgress;
   // used to store last video (id) as progress is saved with Video progress
   lastVideoState: LastVideoState | null;
-  updateVideoProgress: (videoId: string, seconds: number, duration: number) => void;
+  updateVideoProgress: (videoId: string, playlist_id: string, seconds: number, duration: number) => void;
   updateLastVideo: (state: LastVideoState) => void;
   loadSavedState: () => void;
   loadSavedVideoState: (videoId: string) => VideoData;
@@ -34,10 +36,11 @@ interface VideoStore {
 export const useVideoStore = create<VideoStore>((set, get) => ({
   videoProgress: {},
   lastVideoState: null,
-  updateVideoProgress: (videoId, seconds, duration) => {
+  updateVideoProgress: (videoId, playlist_id, seconds, duration) => {
     console.log('updateVideoProgress ', videoId, seconds);
 
     const progressData: VideoData = {
+      playlist_id,
       seconds,
       duration,
       lastUpdated: new Date().toISOString(),

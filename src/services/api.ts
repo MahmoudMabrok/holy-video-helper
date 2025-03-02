@@ -2,6 +2,7 @@
 export interface Video {
   title: string;
   url: string;
+  playlist_id: string;
 }
 
 export interface Playlist {
@@ -75,7 +76,7 @@ export async function fetchPlaylistVideos(playlistId: string): Promise<Video[]> 
     const baseUrl = localStorage.getItem('data_url') || 
       "https://raw.githubusercontent.com/MahmoudMabrok/MyDataCenter/main/";
     
-    const playlistUrl = `${baseUrl}${playlistId}.json`;
+    const playlistUrl = `${baseUrl}playlists/${playlistId}.json`;
     console.log(`Fetching playlist from: ${playlistUrl}`);
     
     const response = await fetch(playlistUrl);
@@ -87,14 +88,15 @@ export async function fetchPlaylistVideos(playlistId: string): Promise<Video[]> 
     
     const data = await response.json();
     
-    if (!data.items || !Array.isArray(data.items)) {
+    if (!data || !Array.isArray(data)) {
       console.error("Playlist data missing items array:", data);
       throw new Error("Playlist data missing items array");
     }
     
-    return data.items.map((item: ApiItem) => ({
+    return data.map((item: ApiItem) => ({
       title: item.title,
-      url: item.url
+      url: item.url,
+      playlist_id: playlistId
     }));
   } catch (error) {
     console.error(`Error fetching playlist videos for ${playlistId}:`, error);

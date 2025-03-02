@@ -4,8 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 interface VideoPlayerProps {
   videoId: string;
+  playlist_id?: string;
   startTime?: number;
-  onProgressChange: (seconds: number, duration: number) => void;
+  onProgressChange?: (seconds: number, duration: number) => void;
   autoplay?: boolean;
   onVideoEnd?: () => void;
 }
@@ -19,6 +20,7 @@ declare global {
 
 export function VideoPlayer({ 
   videoId, 
+  playlist_id = 'aa',
   startTime = 0, 
   onProgressChange,
   autoplay = false,
@@ -67,12 +69,13 @@ export function VideoPlayer({
   const saveProgress = useCallback(() => {
     updateVideoProgress(
       videoId,
+      playlist_id,
       currentProgressRef.current.time,
       currentProgressRef.current.duration
     );
 
-    updateLastVideo({ videoId, seconds: currentProgressRef.current.time });
-  }, [videoId, updateVideoProgress, updateLastVideo]);
+    updateLastVideo({ videoId, seconds: currentProgressRef.current.time , playlist_id});
+  }, [updateVideoProgress, videoId, updateLastVideo, playlist_id]);
 
   const cleanupPlayer = useCallback(() => {
     if (progressIntervalRef.current) {

@@ -15,9 +15,6 @@ export default function PlaylistDetails() {
   
   const { 
     videoProgress, 
-    updateVideoProgress, 
-    lastVideoState,
-    updateLastVideo 
   } = useVideoStore();
 
   // Fetch sections to get the playlist metadata
@@ -94,6 +91,7 @@ export default function PlaylistDetails() {
           playlist={completePlaylist}
           selectedVideoId={selectedVideoId}
           videoProgress={normalizedProgress}
+          playlistId={playlistId}
           onBack={() => navigate('/')}
           onVideoSelect={setSelectedVideoId}
           onProgressChange={handleProgressChange}

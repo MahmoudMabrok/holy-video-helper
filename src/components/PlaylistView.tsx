@@ -96,8 +96,8 @@ export function PlaylistView({
         <div className="w-full px-4">
           <VideoPlayer 
             videoId={selectedVideoId}
+            playlist_id={playlist.playlist_id}
             startTime={getStartTime(selectedVideoId)}
-            onProgressChange={(seconds, duration) => {}}
             autoplay={true}
             onVideoEnd={handleVideoEnd}
           />
