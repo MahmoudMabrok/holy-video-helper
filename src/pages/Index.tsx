@@ -118,16 +118,6 @@ const Index = () => {
   const calculateTotals = () => {
     if (!sections) return { playlists: 0, videos: 0 };
 
-    // let totalPlaylists = 0;
-    // let totalVideos = 0;
-
-    // for (const section of sections) {
-    //   totalPlaylists += section.playlists.length;
-    //   for (const playlist of section.playlists) {
-    //     totalVideos += playlist.videos.length;
-    //   }
-    // }
-
     return { playlists: data.playlist_count, videos: data.total_video_count };
   };
 
@@ -142,6 +132,9 @@ const Index = () => {
   }
 
   if (error || !sections) {
+    const defaultUrl = 'https://raw.githubusercontent.com/MahmoudMabrok/MyDataCenter/main/';
+    localStorage.setItem('data_url', defaultUrl);
+
     return (
       <div className="min-h-screen bg-background">
         <Header />
