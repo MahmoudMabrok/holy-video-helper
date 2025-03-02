@@ -22,37 +22,34 @@ export function SectionCard({ section, onPlaylistClick }: SectionCardProps) {
 
   if (isMobile) {
     return (
-      <Card className="animate-fade-up p-2">
+      <Card className="animate-fade-up p-2 mb-4">
         <CardHeader className="pb-0 px-4">
           <CardTitle>{section.title}</CardTitle>
         </CardHeader>
         <CardContent className="pt-2 px-4">
           <div className="grid grid-cols-2 gap-2">
-            {section.playlists.map((playlist) => {
-              const thumbnail = getFirstVideoThumbnail(playlist.videos[0]?.url);
-              return (
-                <div
-                  key={playlist.name}
-                  onClick={() => onPlaylistClick(playlist.name)}
-                >
-                  <Card className="overflow-hidden cursor-pointer hover:shadow-md transition-all">
-                    <div className="aspect-video relative">
-                      <img
-                        src={thumbnail || '/placeholder.svg'}
-                        alt={playlist.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <CardContent className="p-2">
-                      <h3 className="font-medium text-sm line-clamp-1">{playlist.name}</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {playlist.videos.length} videos
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-              );
-            })}
+            {section.playlists.map((playlist) => (
+              <div
+                key={playlist.name}
+                onClick={() => onPlaylistClick(playlist.name)}
+              >
+                <Card className="overflow-hidden cursor-pointer hover:shadow-md transition-all">
+                  <div className="aspect-video relative">
+                    <img
+                      src={playlist.thunmbnail || '/placeholder.svg'}
+                      alt={playlist.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <CardContent className="p-2">
+                    <h3 className="font-medium text-sm line-clamp-1">{playlist.name}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {playlist.playlist_id ? "Click to view" : "No videos"}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -60,13 +57,13 @@ export function SectionCard({ section, onPlaylistClick }: SectionCardProps) {
   }
 
   return (
-    <Card className="animate-fade-up w-full p-4">
-      <CardHeader className="pb-2 px-4">
+    <Card className="animate-fade-up w-full p-4 mb-8">
+      <CardHeader className="pb-2 px-6">
         <CardTitle>{section.title}</CardTitle>
       </CardHeader>
-      <CardContent className="pt-2 px-4">
+      <CardContent className="pt-4 px-6">
         <ScrollArea className="max-h-[80vh]">
-          <div className="grid grid-cols-3 gap-4 pr-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pr-4">
             {section.playlists.map((playlist) => (
               <PlaylistCard
                 key={playlist.name}
