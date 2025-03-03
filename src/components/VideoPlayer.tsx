@@ -1,7 +1,7 @@
-
 import { useVideoStore } from "@/store/videoStore";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useUsageTimerStore } from "@/store/usageTimerStore";
 
 interface VideoPlayerProps {
   videoId: string;
@@ -43,12 +43,12 @@ export function VideoPlayer({
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(parseFloat(localStorage.getItem('playback_speed') || '1'));
   const isMobile = useIsMobile();
   
-  // Add visibility change listener reference
   const visibilityChangeRef = useRef<boolean>(false);
+  const [isAudioOnlyMode, setIsAudioOnlyMode] = useState<boolean>(false);
 
   const { updateVideoProgress, updateLastVideo } = useVideoStore();
+  const { startTimer, stopTimer } = useUsageTimerStore();
 
-  // Effect to update settings when they change in localStorage
   useEffect(() => {
     const handleStorageChange = () => {
       const newQuality = localStorage.getItem('video_quality') || 'auto';
@@ -57,7 +57,6 @@ export function VideoPlayer({
       setVideoQuality(newQuality);
       setPlaybackSpeed(newSpeed);
       
-      // Apply new playback speed if player exists
       if (playerRef.current && playerRef.current.setPlaybackRate) {
         try {
           playerRef.current.setPlaybackRate(newSpeed);
@@ -82,46 +81,52 @@ export function VideoPlayer({
     updateLastVideo({ videoId, seconds: currentProgressRef.current.time , playlist_id});
   }, [updateVideoProgress, videoId, updateLastVideo, playlist_id]);
 
-  // Setup visibility change handler to ensure playback continues
   useEffect(() => {
-    if (!isMobile) return; // Only needed for mobile devices
-    
+    if (!isMobile) return;
+
     const handleVisibilityChange = () => {
       if (document.hidden) {
         visibilityChangeRef.current = true;
-        // The page is now hidden (background)
         console.log('App went to background, attempting to keep playback alive');
         
-        // For YouTube videos, we can try enabling background playback
-        // by requesting Picture-in-Picture if available
         if (playerRef.current && playerRef.current.getPlayerState && 
             playerRef.current.getPlayerState() === window.YT.PlayerState.PLAYING) {
           try {
-            // Save current progress before background
             saveProgress();
+            stopTimer();
+            setIsAudioOnlyMode(true);
             
-            // For browsers that support it, request PiP mode
-            const video = document.querySelector(`#${playerContainerId} video, 
-                                                #${playerContainerId} iframe`) as HTMLVideoElement | null;
-            if (video && document.pictureInPictureEnabled && 
-                !document.pictureInPictureElement && 'requestPictureInPicture' in video) {
-              // Try to request Picture-in-Picture mode if supported
-              video.requestPictureInPicture();
+            if (playerRef.current.setPlaybackQuality) {
+              playerRef.current.setPlaybackQuality('small');
+            }
+            
+            if ('wakeLock' in navigator) {
+              navigator.wakeLock.request('screen').catch(err => {
+                console.log('Wake Lock error:', err);
+              });
             }
           } catch (e) {
             console.error('Error keeping video alive in background:', e);
           }
         }
       } else if (visibilityChangeRef.current) {
-        // The page is now visible (foreground) after being in background
         visibilityChangeRef.current = false;
         console.log('App returned from background');
         
-        // Resume normal playback if needed
-        if (playerRef.current && playerRef.current.getPlayerState && 
-            playerRef.current.getPlayerState() !== window.YT.PlayerState.PLAYING) {
+        if (playerRef.current && playerRef.current.getPlayerState) {
           try {
-            playerRef.current.playVideo();
+            if (isAudioOnlyMode) {
+              setIsAudioOnlyMode(false);
+              if (playerRef.current.setPlaybackQuality) {
+                playerRef.current.setPlaybackQuality(videoQuality === 'auto' ? 'auto' : videoQuality);
+              }
+            }
+            
+            if (playerRef.current.getPlayerState() !== window.YT.PlayerState.PLAYING) {
+              playerRef.current.playVideo();
+            }
+            
+            startTimer();
           } catch (e) {
             console.error('Error resuming video after background:', e);
           }
@@ -133,7 +138,7 @@ export function VideoPlayer({
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [isMobile, playerContainerId, saveProgress]);
+  }, [isMobile, playerContainerId, saveProgress, videoQuality, isAudioOnlyMode, startTimer, stopTimer]);
 
   const cleanupPlayer = useCallback(() => {
     if (progressIntervalRef.current) {
@@ -141,7 +146,6 @@ export function VideoPlayer({
       progressIntervalRef.current = null;
     }
 
-    // Save progress before cleanup
     if (currentProgressRef.current.time > 0 && currentProgressRef.current.duration > 0) {
       console.log('Saving progress on cleanup:', currentProgressRef.current);
       saveProgress();
@@ -163,15 +167,12 @@ export function VideoPlayer({
     startTimeRef.current = startTime;
     hasInitialSeekRef.current = false;
 
-    // Create a container if it doesn't exist
     let container = document.getElementById(playerContainerId);
     if (!container) {
-      // Create a dedicated container for this specific video
       container = document.createElement("div");
       container.id = playerContainerId;
       const mainContainer = document.getElementById("youtube-player-container");
       if (mainContainer) {
-        // Clear any previous content if videoId changed
         if (containerRef.current !== videoId) {
           mainContainer.innerHTML = '';
         }
@@ -179,7 +180,6 @@ export function VideoPlayer({
       }
     }
 
-    // Only destroy and recreate the player if the videoId changes
     if (containerRef.current !== videoId) {
       cleanupPlayer();
       containerRef.current = videoId;
@@ -189,7 +189,6 @@ export function VideoPlayer({
     const initYouTubePlayer = () => {
       if (!videoId || !document.getElementById(playerContainerId)) return;
 
-      // If we already have a valid player instance for this video, just update it
       if (playerRef.current && isPlayerInitialized.current) {
         console.log("Updating existing player with:", { videoId, startTime });
         if (startTimeRef.current > 0 && !hasInitialSeekRef.current) {
@@ -202,7 +201,7 @@ export function VideoPlayer({
             }
           } catch (e) {
             console.error("Error seeking/playing video:", e);
-            initializeNewPlayer(); // Fallback to new player if there's an error
+            initializeNewPlayer();
           }
         }
         return;
@@ -221,7 +220,6 @@ export function VideoPlayer({
 
     const initializeNewPlayer = () => {
       try {
-        // If we have a player instance, destroy it first
         if (playerRef.current) {
           try {
             playerRef.current.destroy();
@@ -239,8 +237,7 @@ export function VideoPlayer({
             modestbranding: 1,
             rel: 0,
             start: startTimeRef.current,
-            // Enable playback on mobile when in background
-            playsinline: 1,  
+            playsinline: 1,
           },
           height: "100%",
           width: "100%",
@@ -251,13 +248,11 @@ export function VideoPlayer({
               currentProgressRef.current.duration = videoDuration;
               isPlayerInitialized.current = true;
 
-              // Set playback speed
               if (playbackSpeed !== 1) {
                 console.log("Setting playback speed to:", playbackSpeed);
                 event.target.setPlaybackRate(playbackSpeed);
               }
               
-              // Set quality if not auto
               if (videoQuality !== 'auto') {
                 console.log("Setting video quality to:", videoQuality);
                 event.target.setPlaybackQuality(videoQuality);
@@ -331,7 +326,6 @@ export function VideoPlayer({
         clearInterval(progressIntervalRef.current);
       }
 
-      // Debounce progress update
       const now = Date.now();
       if (now - lastUpdateRef.current > 500) {
         lastUpdateRef.current = now;
@@ -343,11 +337,9 @@ export function VideoPlayer({
         clearInterval(progressIntervalRef.current);
       }
       
-      // Save progress on video end
       console.log('Saving progress on video end:', currentProgressRef.current);
       saveProgress();
       
-      // Call onVideoEnd callback if provided
       if (onVideoEnd) {
         console.log('Video ended, calling onVideoEnd callback');
         onVideoEnd();
@@ -358,6 +350,14 @@ export function VideoPlayer({
   return (
     <div className="w-full aspect-video bg-black relative">
       <div id="youtube-player-container" className="absolute inset-0" />
+      {isAudioOnlyMode && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10 text-white">
+          <p className="text-center p-4">
+            Background playback active (audio only). 
+            <br />Tap to restore video.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
