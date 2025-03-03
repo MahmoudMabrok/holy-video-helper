@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Clock, PlayCircle } from "lucide-react";
+import { ArrowLeft, Clock, PlayCircle, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUsageTimerStore } from "@/store/usageTimerStore";
 import { Header } from "@/components/Header";
@@ -82,7 +82,7 @@ export default function Statistics() {
           <h1 className="text-2xl font-semibold">Statistics</h1>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 mb-8">
+        <div className="grid gap-4 md:grid-cols-3 mb-8">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">
@@ -115,6 +115,23 @@ export default function Statistics() {
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Across {dailyUsage.length} days
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card className="cursor-pointer hover:shadow-md transition-all" onClick={() => navigate('/leaderboard')}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">
+                Usage Leaderboard
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center">
+                <Trophy className="h-5 w-5 text-amber-500 mr-2" />
+                <div className="text-2xl font-bold">View Ranking</div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Compare your app usage with others
               </p>
             </CardContent>
           </Card>
