@@ -118,6 +118,8 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
       
       // Refresh the leaderboard data
       await get().fetchLeaderboard();
+      
+      toast.success('Usage time synced to leaderboard');
     } catch (error) {
       console.error('Error syncing with leaderboard:', error);
       toast.error('Failed to update leaderboard. Please try again later.');
