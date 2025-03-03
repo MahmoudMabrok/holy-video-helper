@@ -56,8 +56,8 @@ export function SectionCard({ section, onPlaylistClick }: SectionCardProps) {
           <CardTitle>{section.title}</CardTitle>
         </CardHeader>
         <CardContent className="pt-4 px-6 overflow-visible">
-          <ScrollArea className="w-full max-h-[70vh]">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-4 pr-4">
+          <ScrollArea className="w-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 ">
               {section.playlists.map((playlist) => (
                 <PlaylistCard
                   key={playlist.name}
