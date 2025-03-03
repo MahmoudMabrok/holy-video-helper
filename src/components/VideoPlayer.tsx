@@ -1,6 +1,7 @@
 
 import { useVideoStore } from "@/store/videoStore";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface VideoPlayerProps {
   videoId: string;
@@ -40,6 +41,10 @@ export function VideoPlayer({
   const isPlayerInitialized = useRef<boolean>(false);
   const [videoQuality, setVideoQuality] = useState<string>(localStorage.getItem('video_quality') || 'auto');
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(parseFloat(localStorage.getItem('playback_speed') || '1'));
+  const isMobile = useIsMobile();
+  
+  // Add visibility change listener reference
+  const visibilityChangeRef = useRef<boolean>(false);
 
   const { updateVideoProgress, updateLastVideo } = useVideoStore();
 
@@ -76,6 +81,59 @@ export function VideoPlayer({
 
     updateLastVideo({ videoId, seconds: currentProgressRef.current.time , playlist_id});
   }, [updateVideoProgress, videoId, updateLastVideo, playlist_id]);
+
+  // Setup visibility change handler to ensure playback continues
+  useEffect(() => {
+    if (!isMobile) return; // Only needed for mobile devices
+    
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        visibilityChangeRef.current = true;
+        // The page is now hidden (background)
+        console.log('App went to background, attempting to keep playback alive');
+        
+        // For YouTube videos, we can try enabling background playback
+        // by requesting Picture-in-Picture if available
+        if (playerRef.current && playerRef.current.getPlayerState && 
+            playerRef.current.getPlayerState() === window.YT.PlayerState.PLAYING) {
+          try {
+            // Save current progress before background
+            saveProgress();
+            
+            // For browsers that support it, request PiP mode
+            const video = document.querySelector(`#${playerContainerId} video, 
+                                                #${playerContainerId} iframe`);
+            if (video && document.pictureInPictureEnabled && 
+                !document.pictureInPictureElement) {
+              // Try to request Picture-in-Picture mode if supported
+              video.requestPictureInPicture?.();
+            }
+          } catch (e) {
+            console.error('Error keeping video alive in background:', e);
+          }
+        }
+      } else if (visibilityChangeRef.current) {
+        // The page is now visible (foreground) after being in background
+        visibilityChangeRef.current = false;
+        console.log('App returned from background');
+        
+        // Resume normal playback if needed
+        if (playerRef.current && playerRef.current.getPlayerState && 
+            playerRef.current.getPlayerState() !== window.YT.PlayerState.PLAYING) {
+          try {
+            playerRef.current.playVideo();
+          } catch (e) {
+            console.error('Error resuming video after background:', e);
+          }
+        }
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isMobile, playerContainerId, saveProgress]);
 
   const cleanupPlayer = useCallback(() => {
     if (progressIntervalRef.current) {
@@ -181,6 +239,8 @@ export function VideoPlayer({
             modestbranding: 1,
             rel: 0,
             start: startTimeRef.current,
+            // Enable playback on mobile when in background
+            playsinline: 1,  
           },
           height: "100%",
           width: "100%",
@@ -234,7 +294,7 @@ export function VideoPlayer({
     }
 
     return cleanupPlayer;
-  }, [videoId, autoplay, cleanupPlayer, videoQuality, playbackSpeed]); // Added quality and speed to dependencies
+  }, [videoId, autoplay, cleanupPlayer, videoQuality, playbackSpeed]); 
 
   const onPlayerStateChange = (event: any) => {
     if (!videoId || !playerRef.current) return;
