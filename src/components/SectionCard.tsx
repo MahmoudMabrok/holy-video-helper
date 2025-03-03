@@ -50,23 +50,25 @@ export function SectionCard({ section, onPlaylistClick }: SectionCardProps) {
   }
 
   return (
-    <Card className="animate-fade-up w-full p-4 mb-8">
-      <CardHeader className="pb-2 px-6">
-        <CardTitle>{section.title}</CardTitle>
-      </CardHeader>
-      <CardContent className="pt-4 px-6">
-        <ScrollArea className="max-h-[80vh]">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pr-4">
-            {section.playlists.map((playlist) => (
-              <PlaylistCard
-                key={playlist.name}
-                playlist={playlist}
-                onClick={() => onPlaylistClick(playlist.playlist_id,playlist.name)}
-              />
-            ))}
-          </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+    <div className="w-full mb-8">
+      <Card className="animate-fade-up w-full p-4">
+        <CardHeader className="pb-2 px-6">
+          <CardTitle>{section.title}</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4 px-6 overflow-visible">
+          <ScrollArea className="w-full max-h-[70vh]">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-4 pr-4">
+              {section.playlists.map((playlist) => (
+                <PlaylistCard
+                  key={playlist.name}
+                  playlist={playlist}
+                  onClick={() => onPlaylistClick(playlist.playlist_id, playlist.name)}
+                />
+              ))}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

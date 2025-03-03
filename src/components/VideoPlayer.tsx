@@ -102,11 +102,11 @@ export function VideoPlayer({
             
             // For browsers that support it, request PiP mode
             const video = document.querySelector(`#${playerContainerId} video, 
-                                                #${playerContainerId} iframe`);
+                                                #${playerContainerId} iframe`) as HTMLVideoElement | null;
             if (video && document.pictureInPictureEnabled && 
-                !document.pictureInPictureElement) {
+                !document.pictureInPictureElement && 'requestPictureInPicture' in video) {
               // Try to request Picture-in-Picture mode if supported
-              video.requestPictureInPicture?.();
+              video.requestPictureInPicture();
             }
           } catch (e) {
             console.error('Error keeping video alive in background:', e);
