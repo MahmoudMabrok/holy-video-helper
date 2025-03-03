@@ -27,14 +27,14 @@ export function Header() {
         >
           <Clock className="w-5 h-5" />
         </Button>
-        {/* <Button
+        <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate('/statistics')}
-          title="Statistics"
+          onClick={() => navigate('/leaderboard')}
+          title="Leaderboard"
         >
           <BarChart className="w-5 h-5" />
-        </Button> */}
+        </Button>
         <Button
           variant="ghost"
           size="icon"

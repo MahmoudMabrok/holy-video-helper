@@ -3,6 +3,8 @@ import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 
+import supabase from '../../supabase/connect'
+
 interface UsageTime {
   day: string;
   minutes: number;
@@ -55,6 +57,9 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
     if (elapsedMinutes <= 0) return;
     
     const today = new Date().toLocaleDateString();
+
+    if(!dailyUsage) return; 
+
     const existingDayIndex = dailyUsage.findIndex(item => item.day === today);
     
     let newDailyUsage;
@@ -95,25 +100,17 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
     try {
       const { dailyUsage, userId } = get();
       const totalMinutes = dailyUsage.reduce((sum, day) => sum + day.minutes, 0);
-      
-      if (totalMinutes <= 0) return;
-      
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/app_usage_leaderboard`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-          'Prefer': 'resolution=merge-duplicates'
-        },
-        body: JSON.stringify({
+
+      const { error } = await supabase
+        .from('app_usage_leaderboard')
+        .upsert({
           id: userId,
           total_minutes: totalMinutes,
           last_updated: new Date().toISOString()
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to sync usage: ${response.status}`);
+        }, { onConflict: 'id' });
+
+      if (error) {
+        throw new Error(`Failed to sync usage: ${error.message}`);
       }
       
       // Refresh the leaderboard data
@@ -128,18 +125,16 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
   
   fetchLeaderboard: async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/app_usage_leaderboard?select=id,total_minutes,last_updated&order=total_minutes.desc`, {
-        headers: {
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
-        }
-      });
+   
+      const { data, error } = await supabase
+      .from('app_usage_leaderboard')
+      .select('id, total_minutes, last_updated')
+      .order('total_minutes', { ascending: false });
+
+      console.log('response', data, error);
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch leaderboard: ${response.status}`);
-      }
-      
-      const leaderboardData = await response.json();
-      set({ leaderboard: leaderboardData });
+  
+      set({ leaderboard: data || [] });
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
       toast.error('Failed to load leaderboard. Please try again later.');
