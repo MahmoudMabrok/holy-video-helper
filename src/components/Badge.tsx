@@ -4,6 +4,7 @@ import { Badge as BadgeType } from '@/store/badgeStore';
 import { Badge as UiBadge } from '@/components/ui/badge';
 import * as LucideIcons from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { LucideIcon } from 'lucide-react';
 
 interface BadgeProps {
   badge: BadgeType;
@@ -11,9 +12,13 @@ interface BadgeProps {
 }
 
 export function Badge({ badge, size = 'md' }: BadgeProps) {
-  const IconComponent = badge.icon in LucideIcons 
-    ? LucideIcons[badge.icon as keyof typeof LucideIcons] 
-    : LucideIcons.Award;
+  // Fix the icon component handling
+  const getIconComponent = (): LucideIcon => {
+    const iconName = badge.icon as keyof typeof LucideIcons;
+    return iconName in LucideIcons ? LucideIcons[iconName] : LucideIcons.Award;
+  };
+  
+  const IconComponent = getIconComponent();
     
   // Size configurations
   const sizeClasses = {
