@@ -3,6 +3,7 @@ import React from 'react';
 import { Badge as BadgeType } from '@/store/badgeStore';
 import { Badge as UiBadge } from '@/components/ui/badge';
 import * as LucideIcons from 'lucide-react';
+import { LucideIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface BadgeProps {
@@ -11,14 +12,12 @@ interface BadgeProps {
 }
 
 export function Badge({ badge, size = 'md' }: BadgeProps) {
-  // Get the icon component using dynamic import
-  const getIconComponent = () => {
+  // Get the icon component correctly typed as a LucideIcon
+  const IconComponent = React.useMemo(() => {
     const iconName = badge.icon as keyof typeof LucideIcons;
-    return iconName in LucideIcons ? LucideIcons[iconName] : LucideIcons.Award;
-  };
+    return (iconName in LucideIcons ? LucideIcons[iconName] : LucideIcons.Award) as LucideIcon;
+  }, [badge.icon]);
   
-  const IconComponent = getIconComponent();
-    
   // Size configurations
   const sizeClasses = {
     sm: 'px-2 py-1 text-xs',

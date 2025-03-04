@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Trophy, Clock, User, RefreshCw } from "lucide-react";
+import { ArrowLeft, Trophy, Clock, User, RefreshCw, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUsageTimerStore } from "@/store/usageTimerStore";
@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export default function Leaderboard() {
   const navigate = useNavigate();
   const { userId, leaderboard, fetchLeaderboard, syncWithLeaderboard, getTotalUsageMinutes } = useUsageTimerStore();
-  const { badges } = useBadgeStore();
+  const { badges, consecutiveDays } = useBadgeStore();
   const { getCompletedVideosCount } = useVideoStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -72,6 +72,7 @@ export default function Leaderboard() {
   // Group badges by type
   const timeBadges: BadgeType[] = ['time-30min', 'time-1hour', 'time-5hour'].map(id => badges[id as BadgeTypeEnum]);
   const videoCompletionBadges: BadgeType[] = ['video-first', 'video-5complete'].map(id => badges[id as BadgeTypeEnum]);
+  const appUsageBadges: BadgeType[] = ['app-first-open', 'app-5-days', 'app-10-days', 'app-20-days'].map(id => badges[id as BadgeTypeEnum]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -101,7 +102,7 @@ export default function Leaderboard() {
         </div>
 
         <div className="grid gap-6 mb-8">
-          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -123,36 +124,59 @@ export default function Leaderboard() {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Your Achievements
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Current Streak: <span className="text-primary">{consecutiveDays} days</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="time">
-                  <TabsList className="mb-4">
-                    <TabsTrigger value="time">Watch Time</TabsTrigger>
-                    <TabsTrigger value="videos">Videos</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="time" className="mt-0">
-                    <div className="flex flex-wrap gap-2">
-                      {timeBadges.map(badge => (
-                        <Badge key={badge.id} badge={badge} />
-                      ))}
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="videos" className="mt-0">
-                    <div className="flex flex-wrap gap-2">
-                      {videoCompletionBadges.map(badge => (
-                        <Badge key={badge.id} badge={badge} />
-                      ))}
-                    </div>
-                  </TabsContent>
-                </Tabs>
+                <p className="text-xs text-muted-foreground mb-1">
+                  Open the app daily to earn consecutive day badges
+                </p>
               </CardContent>
             </Card>
           </div>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">
+                Your Achievements
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="time">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="time">Watch Time</TabsTrigger>
+                  <TabsTrigger value="videos">Videos</TabsTrigger>
+                  <TabsTrigger value="app">App Usage</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="time" className="mt-0">
+                  <div className="flex flex-wrap gap-2">
+                    {timeBadges.map(badge => (
+                      <Badge key={badge.id} badge={badge} />
+                    ))}
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="videos" className="mt-0">
+                  <div className="flex flex-wrap gap-2">
+                    {videoCompletionBadges.map(badge => (
+                      <Badge key={badge.id} badge={badge} />
+                    ))}
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="app" className="mt-0">
+                  <div className="flex flex-wrap gap-2">
+                    {appUsageBadges.map(badge => (
+                      <Badge key={badge.id} badge={badge} />
+                    ))}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
         </div>
 
         <h2 className="text-xl font-semibold mb-4 flex items-center">
