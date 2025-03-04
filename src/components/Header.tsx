@@ -1,5 +1,5 @@
 
-import { Settings, BarChart, History, Clock } from "lucide-react";
+import { Settings, BarChart, History, Clock, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "./ThemeToggle";
@@ -31,9 +31,9 @@ export function Header() {
           variant="ghost"
           size="icon"
           onClick={() => navigate('/leaderboard')}
-          title="Leaderboard"
+          title="Leaderboard & Badges"
         >
-          <BarChart className="w-5 h-5" />
+          <Trophy className="w-5 h-5" />
         </Button>
         <Button
           variant="ghost"

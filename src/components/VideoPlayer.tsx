@@ -46,7 +46,7 @@ export function VideoPlayer({
   const visibilityChangeRef = useRef<boolean>(false);
   const [isAudioOnlyMode, setIsAudioOnlyMode] = useState<boolean>(false);
 
-  const { updateVideoProgress, updateLastVideo } = useVideoStore();
+  const { updateVideoProgress, updateLastVideo, markVideoCompleted } = useVideoStore();
   const { startTimer, stopTimer } = useUsageTimerStore();
 
   useEffect(() => {
@@ -339,6 +339,10 @@ export function VideoPlayer({
       
       console.log('Saving progress on video end:', currentProgressRef.current);
       saveProgress();
+      
+      if (currentProgressRef.current.duration > 0) {
+        markVideoCompleted(videoId);
+      }
       
       if (onVideoEnd) {
         console.log('Video ended, calling onVideoEnd callback');

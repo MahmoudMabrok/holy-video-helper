@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 
 import supabase from '../../supabase/connect'
+import { useBadgeStore } from './badgeStore';
 
 interface UsageTime {
   day: string;
@@ -26,6 +27,7 @@ interface UsageTimerState {
   loadSavedUsage: () => void;
   syncWithLeaderboard: () => Promise<void>;
   fetchLeaderboard: () => Promise<void>;
+  getTotalUsageMinutes: () => number;
 }
 
 // Initialize or get the user ID
@@ -79,6 +81,10 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
       dailyUsage: newDailyUsage
     });
     
+    // Check for time-based badges
+    const totalMinutes = get().getTotalUsageMinutes();
+    useBadgeStore.getState().checkTimeBadges(totalMinutes);
+    
     // Sync with leaderboard automatically after updating local usage
     get().syncWithLeaderboard().catch(error => {
       console.error('Failed to sync with leaderboard:', error);
@@ -90,10 +96,19 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
       const savedUsage = localStorage.getItem('daily_usage');
       if (savedUsage) {
         set({ dailyUsage: JSON.parse(savedUsage) });
+        
+        // Check for time-based badges on load
+        const totalMinutes = get().getTotalUsageMinutes();
+        useBadgeStore.getState().checkTimeBadges(totalMinutes);
       }
     } catch (error) {
       console.error('Error loading saved usage data:', error);
     }
+  },
+  
+  getTotalUsageMinutes: () => {
+    const { dailyUsage } = get();
+    return dailyUsage.reduce((sum, day) => sum + day.minutes, 0);
   },
   
   syncWithLeaderboard: async () => {

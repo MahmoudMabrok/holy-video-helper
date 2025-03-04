@@ -8,10 +8,16 @@ import { useUsageTimerStore } from "@/store/usageTimerStore";
 import { Header } from "@/components/Header";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
+import { useBadgeStore, Badge as BadgeType, BadgeType as BadgeTypeEnum } from "@/store/badgeStore";
+import { Badge } from "@/components/Badge";
+import { useVideoStore } from "@/store/videoStore";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Leaderboard() {
   const navigate = useNavigate();
-  const { userId, leaderboard, fetchLeaderboard, syncWithLeaderboard } = useUsageTimerStore();
+  const { userId, leaderboard, fetchLeaderboard, syncWithLeaderboard, getTotalUsageMinutes } = useUsageTimerStore();
+  const { badges } = useBadgeStore();
+  const { getCompletedVideosCount } = useVideoStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -35,6 +41,14 @@ export default function Leaderboard() {
     setIsRefreshing(true);
     try {
       await syncWithLeaderboard();
+      
+      // Update badges based on current stats
+      const totalMinutes = getTotalUsageMinutes();
+      useBadgeStore.getState().checkTimeBadges(totalMinutes);
+      
+      const completedVideos = getCompletedVideosCount();
+      useBadgeStore.getState().checkVideoCompletionBadges(completedVideos);
+      
       toast.success("Your usage time has been updated on the leaderboard");
     } catch (error) {
       console.error("Error syncing with leaderboard:", error);
@@ -54,6 +68,10 @@ export default function Leaderboard() {
 
   // Find user's position in leaderboard
   const userPosition = leaderboard.findIndex(entry => entry.id === userId) + 1;
+
+  // Group badges by type
+  const timeBadges: BadgeType[] = ['time-30min', 'time-1hour', 'time-5hour'].map(id => badges[id as BadgeTypeEnum]);
+  const videoCompletionBadges: BadgeType[] = ['video-first', 'video-5complete'].map(id => badges[id as BadgeTypeEnum]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,25 +100,59 @@ export default function Leaderboard() {
           </Button>
         </div>
 
-        <div className="grid gap-4 mb-8">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">
-                Your Leaderboard Position
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center">
-                <Trophy className="h-5 w-5 text-amber-500 mr-2" />
-                <div className="text-2xl font-bold">
-                  {userPosition > 0 ? `#${userPosition}` : "Not ranked yet"}
+        <div className="grid gap-6 mb-8">
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Your Leaderboard Position
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center">
+                  <Trophy className="h-5 w-5 text-amber-500 mr-2" />
+                  <div className="text-2xl font-bold">
+                    {userPosition > 0 ? `#${userPosition}` : "Not ranked yet"}
+                  </div>
                 </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Sync your usage time to climb the leaderboard
-              </p>
-            </CardContent>
-          </Card>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Sync your usage time to climb the leaderboard
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Your Achievements
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="time">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="time">Watch Time</TabsTrigger>
+                    <TabsTrigger value="videos">Videos</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="time" className="mt-0">
+                    <div className="flex flex-wrap gap-2">
+                      {timeBadges.map(badge => (
+                        <Badge key={badge.id} badge={badge} />
+                      ))}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="videos" className="mt-0">
+                    <div className="flex flex-wrap gap-2">
+                      {videoCompletionBadges.map(badge => (
+                        <Badge key={badge.id} badge={badge} />
+                      ))}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         <h2 className="text-xl font-semibold mb-4 flex items-center">
