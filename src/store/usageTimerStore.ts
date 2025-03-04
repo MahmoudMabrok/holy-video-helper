@@ -116,16 +116,45 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
       const { dailyUsage, userId } = get();
       const totalMinutes = dailyUsage.reduce((sum, day) => sum + day.minutes, 0);
 
-      const { error } = await supabase
-        .from('app_usage_leaderboard')
-        .upsert({
-          id: userId,
-          total_minutes: totalMinutes,
-          last_updated: new Date().toISOString()
-        }, { onConflict: 'id' });
+      console.log('Syncing with leaderboard. Total minutes:', totalMinutes, 'User ID:', userId);
 
-      if (error) {
-        throw new Error(`Failed to sync usage: ${error.message}`);
+      // First check if the user exists in the leaderboard
+      const { data: existingUser, error: fetchError } = await supabase
+        .from('app_usage_leaderboard')
+        .select('id')
+        .eq('id', userId)
+        .single();
+      
+      console.log('Existing user check:', existingUser, fetchError);
+
+      let result;
+      
+      if (!existingUser) {
+        // Insert new user
+        console.log('Inserting new user into leaderboard');
+        result = await supabase
+          .from('app_usage_leaderboard')
+          .insert({
+            id: userId,
+            total_minutes: totalMinutes,
+            last_updated: new Date().toISOString()
+          });
+      } else {
+        // Update existing user
+        console.log('Updating existing user in leaderboard');
+        result = await supabase
+          .from('app_usage_leaderboard')
+          .update({
+            total_minutes: totalMinutes,
+            last_updated: new Date().toISOString()
+          })
+          .eq('id', userId);
+      }
+
+      console.log('Upsert result:', result);
+      
+      if (result.error) {
+        throw new Error(`Failed to sync usage: ${result.error.message}`);
       }
       
       // Refresh the leaderboard data
@@ -140,14 +169,17 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
   
   fetchLeaderboard: async () => {
     try {
-   
+      console.log('Fetching leaderboard data');
       const { data, error } = await supabase
-      .from('app_usage_leaderboard')
-      .select('id, total_minutes, last_updated')
-      .order('total_minutes', { ascending: false });
+        .from('app_usage_leaderboard')
+        .select('id, total_minutes, last_updated')
+        .order('total_minutes', { ascending: false });
 
-      console.log('response', data, error);
+      console.log('Leaderboard response:', data, error);
       
+      if (error) {
+        throw new Error(`Failed to fetch leaderboard: ${error.message}`);
+      }
   
       set({ leaderboard: data || [] });
     } catch (error) {

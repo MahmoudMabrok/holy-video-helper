@@ -18,13 +18,14 @@ CREATE POLICY "Allow public read access to leaderboard"
   FOR SELECT 
   USING (true);
 
--- Allow users to update only their own records
-CREATE POLICY "Allow users to update their own usage data" 
+-- Allow anyone to insert into the leaderboard
+CREATE POLICY "Allow users to insert into leaderboard" 
   ON app_usage_leaderboard 
   FOR INSERT 
   WITH CHECK (true);
 
-CREATE POLICY "Allow users to update their own usage data" 
+-- Allow anyone to update the leaderboard
+CREATE POLICY "Allow users to update leaderboard" 
   ON app_usage_leaderboard 
   FOR UPDATE 
   USING (true);
