@@ -6,6 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { useVideoStore } from "@/store/videoStore";
 import { useState, useEffect } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface PlaylistViewProps {
   playlist: Playlist;
@@ -31,6 +32,7 @@ export function PlaylistView({
     const {  
       loadSavedVideoState, 
     } = useVideoStore();
+    const isMobile = useIsMobile();
 
     // Maintain a current index state to track the currently playing video
     const [currentVideoIndex, setCurrentVideoIndex] = useState<number>(-1);
@@ -77,8 +79,8 @@ export function PlaylistView({
     };
 
   return (
-    <div className="animate-fade-in space-y-4">
-      <div className="sticky top-[73px] bg-background z-10 p-4 border-b">
+    <div className="w-full animate-fade-in pt-4">
+      <div className="w-full mb-4">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -88,24 +90,27 @@ export function PlaylistView({
             <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
             Back
           </Button>
-          <h1 className="text-2xl font-semibold">{playlist.name}</h1>
+          <h1 className="text-2xl font-semibold truncate">{playlist.name}</h1>
         </div>
       </div>
 
       {selectedVideoId && (
-        <div className="w-full px-4">
-          <VideoPlayer 
-            videoId={selectedVideoId}
-            playlist_id={playlist.playlist_id}
-            startTime={getStartTime(selectedVideoId)}
-            autoplay={true}
-            onVideoEnd={handleVideoEnd}
-          />
+        <div className="w-full mb-6">
+          <div className="aspect-video max-w-full">
+            <VideoPlayer 
+              videoId={selectedVideoId}
+              playlist_id={playlist.playlist_id}
+              startTime={getStartTime(selectedVideoId)}
+              autoplay={true}
+              onVideoEnd={handleVideoEnd}
+            />
+          </div>
         </div>
       )}
 
-      <div className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="mt-6">
+        <h2 className="text-xl font-medium mb-4">Playlist Videos</h2>
+        <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
           {playlist.videos.map((video: Video) => {
             const videoId = getVideoId(video.url);
             if (!videoId) return null;
