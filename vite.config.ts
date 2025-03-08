@@ -6,13 +6,13 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: mode === "development" ?  "/" : "/holy-video-helper/",
+  base: "/",
   server: {
     host: "::",
     port: 8080,
   },
   define: {
-    'process.env.NODE_ENV': JSON.stringify('development')
+    'process.env.NODE_ENV': JSON.stringify(mode)
   },
   plugins: [
     react(),
