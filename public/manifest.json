@@ -2,10 +2,13 @@
 {
   "name": "Holy Video Helper",
   "short_name": "HolyVid",
-  "start_url": "/",
+  "description": "A curated collection of Islamic educational videos",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4f46e5",
+  "orientation": "portrait-primary",
+  "scope": "/",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",

@@ -75,21 +75,23 @@ export default function PlaylistDetails() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
-      <ScrollArea className="flex-1 h-[calc(100vh-73px)]">
-        <div className="container mx-auto px-4">
-          <PlaylistView
-            playlist={completePlaylist}
-            selectedVideoId={selectedVideoId}
-            videoProgress={normalizedProgress}
-            onBack={() => navigate('/')}
-            onVideoSelect={setSelectedVideoId}
-            onProgressChange={(videoId, seconds, duration) => {
-              console.log('handleProgressChange', videoId, duration);
-              if (!duration || duration === 0) return;
-            }}
-          />
-        </div>
-      </ScrollArea>
+      <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-[calc(100vh-73px)]">
+          <div className="container mx-auto px-4 py-4">
+            <PlaylistView
+              playlist={completePlaylist}
+              selectedVideoId={selectedVideoId}
+              videoProgress={normalizedProgress}
+              onBack={() => navigate('/')}
+              onVideoSelect={setSelectedVideoId}
+              onProgressChange={(videoId, seconds, duration) => {
+                console.log('handleProgressChange', videoId, duration);
+                if (!duration || duration === 0) return;
+              }}
+            />
+          </div>
+        </ScrollArea>
+      </div>
     </div>
   );
 }
