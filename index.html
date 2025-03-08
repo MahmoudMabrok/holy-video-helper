@@ -17,22 +17,6 @@
 <body>
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        // Get the base URL dynamically based on environment
-        const baseUrl = import.meta.env.MODE === 'development' ? '/' : '/holy-video-helper/';
-
-        navigator.serviceWorker.register(`${baseUrl}sw.js`, { scope: baseUrl })
-          .then(registration => {
-            console.log('ServiceWorker registered with scope:', registration.scope);
-          })
-          .catch(error => {
-            console.error('ServiceWorker registration failed:', error);
-          });
-      });
-    }
-  </script>
 </body>
 
 </html>
