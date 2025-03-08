@@ -1,35 +1,40 @@
-
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Khelwatk</title>
-    <meta name="description" content="A curated collection of Islamic educational videos" />
-    <meta name="author" content="Khelwatk" />
-    <meta property="og:image" content="/og-image.png" />
-    <link rel="preconnect" href="https://img.youtube.com">
-    <link rel="manifest" href="/holy-video-helper/manifest.json" />
-    <meta name="theme-color" content="#4f46e5" />
-    <link rel="apple-touch-icon" href="/holy-video-helper/icons/icon-192x192.png" />
-    <script type="module" crossorigin src="/holy-video-helper/assets/index-DvBNNXzH.js"></script>
-    <link rel="modulepreload" crossorigin href="/holy-video-helper/assets/vendor-_F40F302.js">
-    <link rel="stylesheet" crossorigin href="/holy-video-helper/assets/index-ClAVmCZt.css">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js', { scope: '/' })
-            .then(registration => {
-              console.log('ServiceWorker registered with scope:', registration.scope);
-            })
-            .catch(error => {
-              console.error('ServiceWorker registration failed:', error);
-            });
-        });
-      }
-    </script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Khelwatk</title>
+  <meta name="description" content="A curated collection of Islamic educational videos" />
+  <meta name="author" content="Khelwatk" />
+  <meta property="og:image" content="/og-image.png" />
+  <link rel="preconnect" href="https://img.youtube.com">
+  <link rel="manifest" href="/holy-video-helper/manifest.json" />
+  <meta name="theme-color" content="#4f46e5" />
+  <link rel="apple-touch-icon" href="/holy-video-helper/icons/icon-192x192.png" />
+  <script type="module" crossorigin src="/holy-video-helper/assets/index-DvBNNXzH.js"></script>
+  <link rel="modulepreload" crossorigin href="/holy-video-helper/assets/vendor-_F40F302.js">
+  <link rel="stylesheet" crossorigin href="/holy-video-helper/assets/index-ClAVmCZt.css">
+</head>
+
+<body>
+  <div id="root"></div>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        // Get the base URL dynamically based on environment
+        const baseUrl = import.meta.env.MODE === 'development' ? '/' : '/holy-video-helper/';
+
+        navigator.serviceWorker.register(`${baseUrl}sw.js`, { scope: baseUrl })
+          .then(registration => {
+            console.log('ServiceWorker registered with scope:', registration.scope);
+          })
+          .catch(error => {
+            console.error('ServiceWorker registration failed:', error);
+          });
+      });
+    }
+  </script>
+</body>
+
 </html>
