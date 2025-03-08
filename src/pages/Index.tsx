@@ -18,6 +18,8 @@ const VideoPlayer = lazy(() =>
   }))
 );
 
+const ID_COUNTER = "1306546/t/0";
+
 const Index = () => {
   const navigate = useNavigate();
   const [showLastVideo, setShowLastVideo] = useState(false);
@@ -56,9 +58,31 @@ const Index = () => {
     };
   }, [loadSavedState, loadSavedUsage, startTimer, stopTimer]);
 
+  useEffect(() => {
+    fetch(`https://www.freevisitorcounters.com/en/home/counter/${ID_COUNTER}`, {
+      "headers": {
+        "accept": "*/*",
+        "accept-language": "en-US,en;q=0.9",
+        "priority": "u=1",
+        "sec-ch-ua": "\"Chromium\";v=\"134\", \"Not:A-Brand\";v=\"24\", \"Google Chrome\";v=\"134\"",
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": "\"macOS\"",
+        "sec-fetch-dest": "script",
+        "sec-fetch-mode": "no-cors",
+        "sec-fetch-site": "cross-site",
+        "sec-fetch-storage-access": "active"
+      },
+      "referrerPolicy": "strict-origin-when-cross-origin",
+      "body": null,
+      "method": "GET",
+      "mode": "cors",
+      "credentials": "omit"
+    });
+  }, []);
+
   const handlePlaylistClick = (playlistId: string, playlistName: string) => {
     console.log("Navigating to playlist", playlistId, playlistName);
-    
+
     // Navigate using the playlist ID with the name as a URL parameter
     navigate(`/playlist/${playlistId}?name=${encodeURIComponent(playlistName)}`);
   };
@@ -73,7 +97,7 @@ const Index = () => {
   const navigateToPlaylist = () => {
     if (!lastVideoState) return;
     console.log("Navigating to playlist", lastVideoState.playlist_id);
-    
+
 
     // Navigate to the playlist that contains this video
     if (sections && lastVideoState.playlist_id) {
@@ -157,7 +181,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4" >
         {/* Smart Banner with totals */}
         <div className="w-full py-4 animate-fade-up">
           <Card className="bg-gradient-to-r from-purple-500/10 to-indigo-500/5 border-purple-500/20 shadow-md">
@@ -224,7 +248,7 @@ const Index = () => {
                       <VideoPlayer
                         videoId={lastVideoState.videoId}
                         startTime={lastVideo.progress}
-                        onProgressChange={() => {}}
+                        onProgressChange={() => { }}
                         autoplay={false}
                       />
                     </Suspense>
@@ -244,6 +268,11 @@ const Index = () => {
             />
           ))}
         </div>
+
+        <div className="w-full py-4 animate-fade-up flex items-center justify-center">
+          <img className="my-16 " src={`https://www.freevisitorcounters.com/en/counter/render/${ID_COUNTER}`} />
+        </div>
+
       </div>
     </div>
   );
