@@ -12,29 +12,13 @@
   <link rel="manifest" href="/holy-video-helper/manifest.json" />
   <meta name="theme-color" content="#4f46e5" />
   <link rel="apple-touch-icon" href="/holy-video-helper/icons/icon-192x192.png" />
-  <script type="module" crossorigin src="/holy-video-helper/assets/index-DvBNNXzH.js"></script>
+  <script type="module" crossorigin src="/holy-video-helper/assets/index-BeVgqRy5.js"></script>
   <link rel="modulepreload" crossorigin href="/holy-video-helper/assets/vendor-_F40F302.js">
   <link rel="stylesheet" crossorigin href="/holy-video-helper/assets/index-ClAVmCZt.css">
-</head>
+<link rel="manifest" href="/holy-video-helper/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/holy-video-helper/registerSW.js"></script></head>
 
 <body>
   <div id="root"></div>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        // Get the base URL dynamically based on environment
-        const baseUrl = import.meta.env.MODE === 'development' ? '/' : '/holy-video-helper/';
-
-        navigator.serviceWorker.register(`${baseUrl}sw.js`, { scope: baseUrl })
-          .then(registration => {
-            console.log('ServiceWorker registered with scope:', registration.scope);
-          })
-          .catch(error => {
-            console.error('ServiceWorker registration failed:', error);
-          });
-      });
-    }
-  </script>
 </body>
 
 </html>

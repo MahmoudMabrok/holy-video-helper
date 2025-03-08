@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/holy-video-helper/sw.js', { scope: '/holy-video-helper/' })})}
