@@ -95,11 +95,17 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
     try {
       const savedUsage = localStorage.getItem('daily_usage');
       if (savedUsage) {
-        set({ dailyUsage: JSON.parse(savedUsage) });
+        const usage = JSON.parse(savedUsage);
+        set({ dailyUsage: usage });
         
         // Check for time-based badges on load
         const totalMinutes = get().getTotalUsageMinutes();
         useBadgeStore.getState().checkTimeBadges(totalMinutes);
+        
+        // Sync with leaderboard on initial load to ensure consistency
+        get().syncWithLeaderboard().catch(error => {
+          console.error('Failed to sync with leaderboard on load:', error);
+        });
       }
     } catch (error) {
       console.error('Error loading saved usage data:', error);
@@ -121,7 +127,7 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
       // First check if the user exists in the leaderboard
       const { data: existingUser, error: fetchError } = await supabase
         .from('app_usage_leaderboard')
-        .select('id')
+        .select('id, total_minutes')
         .eq('id', userId)
         .single();
       
@@ -129,38 +135,43 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
 
       let result;
       
-      if (!existingUser) {
-        // Insert new user
-        console.log('Inserting new user into leaderboard');
-        result = await supabase
-          .from('app_usage_leaderboard')
-          .insert({
-            id: userId,
-            total_minutes: totalMinutes,
-            last_updated: new Date().toISOString()
-          });
-      } else {
-        // Update existing user
-        console.log('Updating existing user in leaderboard');
-        result = await supabase
-          .from('app_usage_leaderboard')
-          .update({
-            total_minutes: totalMinutes,
-            last_updated: new Date().toISOString()
-          })
-          .eq('id', userId);
-      }
+      // Only update if values are different to avoid unnecessary updates
+      if (!existingUser || existingUser.total_minutes !== totalMinutes) {
+        if (!existingUser) {
+          // Insert new user
+          console.log('Inserting new user into leaderboard');
+          result = await supabase
+            .from('app_usage_leaderboard')
+            .insert({
+              id: userId,
+              total_minutes: totalMinutes,
+              last_updated: new Date().toISOString()
+            });
+        } else {
+          // Update existing user
+          console.log('Updating existing user in leaderboard');
+          result = await supabase
+            .from('app_usage_leaderboard')
+            .update({
+              total_minutes: totalMinutes,
+              last_updated: new Date().toISOString()
+            })
+            .eq('id', userId);
+        }
 
-      console.log('Upsert result:', result);
-      
-      if (result.error) {
-        throw new Error(`Failed to sync usage: ${result.error.message}`);
+        console.log('Upsert result:', result);
+        
+        if (result.error) {
+          throw new Error(`Failed to sync usage: ${result.error.message}`);
+        }
+        
+        // Refresh the leaderboard data
+        await get().fetchLeaderboard();
+        
+        toast.success('Usage time synced to leaderboard');
+      } else {
+        console.log('No sync needed, values already match');
       }
-      
-      // Refresh the leaderboard data
-      await get().fetchLeaderboard();
-      
-      toast.success('Usage time synced to leaderboard');
     } catch (error) {
       console.error('Error syncing with leaderboard:', error);
       toast.error('Failed to update leaderboard. Please try again later.');

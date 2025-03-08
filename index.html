@@ -9,13 +9,28 @@
     <meta name="author" content="Khelwatk" />
     <meta property="og:image" content="/og-image.png" />
     <link rel="preconnect" href="https://img.youtube.com">
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#4f46e5" />
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js', { scope: '/' })
+            .then(registration => {
+              console.log('ServiceWorker registered with scope:', registration.scope);
+            })
+            .catch(error => {
+              console.error('ServiceWorker registration failed:', error);
+            });
+        });
+      }
+    </script>
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <div style="display: flex; justify-content: center; align-items: center; flex-direction: column; padding-bottom: 32px; background-color: bisque;">
-      
       <a href='http://www.freevisitorcounters.com'>Free counter</a>
       <script type='text/javascript' src='https://www.freevisitorcounters.com/auth.php?id=de0a2ac6609a770cfb73e0d29c9f6321cbd7eb28'></script>
       <script type="text/javascript" src="https://www.freevisitorcounters.com/en/home/counter/1306546/t/0"></script>
