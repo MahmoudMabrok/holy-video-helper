@@ -114,13 +114,6 @@ export default function PlaylistDetails() {
           onProgressChange={handleProgressChange}
         />
       </div>
-      {/* <div className="flex items-center justify-center" style={{ height: '100px' }}>
-      <img 
-          src={`https://www.freevisitorcounters.com/en/counter/render/${ID_COUNTER}`} 
-          alt="counter"
-          className="mt-4 w-auto"
-        />
-      </div> */}
     </div>
   );
 }

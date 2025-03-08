@@ -8,7 +8,6 @@ import { VideoPlayer } from "@/components/VideoPlayer";
 import { useVideoStore } from "@/store/videoStore";
 import { useQuery } from "@tanstack/react-query";
 import { fetchContent } from "@/services/api";
-import { format } from "path";
 import { formatVideoProgress } from "@/lib/utils";
 
 interface RecentVideo {
@@ -59,15 +58,11 @@ export default function RecentVideos() {
     
     // Filter for YouTube video IDs (11 characters)
     const videoKeys = allKeys.filter(key => /^[A-Za-z0-9_-]{11}$/.test(key));
-
-    console.log('videoKeys', videoKeys);
     
     // Get data for each video
     const videos: RecentVideo[] = videoKeys.map(videoId => {
       const data = loadSavedVideoState(videoId);
       const { title, playlistName } = findVideoInfo(videoId);
-
-      console.log('saved data', data , title, playlistName);
       
       return {
         videoId,
