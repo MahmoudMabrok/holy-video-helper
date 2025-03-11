@@ -127,7 +127,7 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
       const { dailyUsage, userId } = get();
       const totalMinutes = dailyUsage.reduce((sum, day) => sum + day.minutes, 0);
 
-      console.log('Syncing with leaderboard. Total minutes:', totalMinutes, 'User ID:', userId, dailyUsage);
+      console.log('Syncing with leaderboard. Total minutes:', totalMinutes, 'User ID:', userId,);
 
       // First check if the user exists in the leaderboard
       const { data: existingUser, error: fetchError } = await supabase
@@ -154,14 +154,13 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
             });
         } else {
           // Update existing user
-          console.log('Updating existing user in leaderboard');
           result = await supabase
             .from('app_usage_leaderboard')
-            .update({
+            .upsert({
+              id: userId,
               total_minutes: totalMinutes,
               last_updated: new Date().toISOString()
-            })
-            .eq('id', userId);
+            }).select();
         }
 
         console.log('Upsert result:', result);
