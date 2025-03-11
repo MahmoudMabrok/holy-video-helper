@@ -104,10 +104,12 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
       if (savedUsage) {
         const usage = JSON.parse(savedUsage);
         set({ dailyUsage: usage });
-        console.log('Loaded saved usage:', usage);
+        console.log('loadSavedUsage Loaded saved usage: dailyUsage : ', usage);
         
         // Check for time-based badges on load
         const totalMinutes = get().getTotalUsageMinutes();
+        console.log('loadSavedUsage totalMinutes', totalMinutes);
+        
         useBadgeStore.getState().checkTimeBadges(totalMinutes);
       }
     } catch (error) {
@@ -125,7 +127,7 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
       const { dailyUsage, userId } = get();
       const totalMinutes = dailyUsage.reduce((sum, day) => sum + day.minutes, 0);
 
-      console.log('Syncing with leaderboard. Total minutes:', totalMinutes, 'User ID:', userId);
+      console.log('Syncing with leaderboard. Total minutes:', totalMinutes, 'User ID:', userId, dailyUsage);
 
       // First check if the user exists in the leaderboard
       const { data: existingUser, error: fetchError } = await supabase

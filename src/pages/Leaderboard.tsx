@@ -43,6 +43,8 @@ export default function Leaderboard() {
       
       // Update badges based on current stats
       const totalMinutes = getTotalUsageMinutes();
+      console.log('handle refresh totalMinutes', totalMinutes);
+      
       useBadgeStore.getState().checkTimeBadges(totalMinutes);
       
       const completedVideos = getCompletedVideosCount();
