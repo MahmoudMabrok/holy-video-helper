@@ -282,43 +282,6 @@ const Index = () => {
       </div>
     </div>
   );
-
-  function getLastVideoInfo() {
-    if (!lastVideoState || !sections)
-      return { title: "Unknown", progress: 0, duration: 0 };
-
-    const videoData = loadSavedVideoState(lastVideoState.videoId);
-    let videoTitle = "Unknown Video";
-
-    // Find the video title
-    for (const section of sections) {
-      for (const playlist of section.playlists) {
-        const video = playlist.videos.find((v) => {
-          const idMatch = v.url.match(/(?:v=|\/)([\w-]{11})(?:\?|$|&)/);
-          return idMatch && idMatch[1] === lastVideoState.videoId;
-        });
-
-        if (video) {
-          videoTitle = video.title;
-          break;
-        }
-      }
-    }
-
-    return {
-      title: videoTitle,
-      progress: videoData.seconds,
-      duration: videoData.duration,
-    };
-  }
-
-  function calculateTotals() {
-    if (!sections) return { playlists: 0, videos: 0 };
-
-    return { playlists: data.playlist_count, videos: data.total_video_count };
-  }
-
-  const totals = calculateTotals();
-}
+};
 
 export default Index;
