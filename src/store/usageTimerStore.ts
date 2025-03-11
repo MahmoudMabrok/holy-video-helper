@@ -158,6 +158,7 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
             });
         } else {
           // Update existing user
+          console.log('Update existing user in leaderboard');
           result = await supabase
             .from('app_usage_leaderboard')
             .upsert({

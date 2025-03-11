@@ -39,7 +39,7 @@ export default function PlaylistDetails() {
       "mode": "cors",
       "credentials": "omit"
     });
-  }, []);
+  }, [selectedVideoId]);
   
   const { 
     videoProgress, 

@@ -53,11 +53,6 @@ const Index = () => {
     // Start the timer when the page loads
     startTimer();
 
-    // Sync usage data with leaderboard on initial load
-    syncWithLeaderboard().catch(err => {
-      console.error("Error syncing with leaderboard on initial load:", err);
-    });
-
     // Stop the timer when the component unmounts
     return () => {
       stopTimer();
@@ -83,6 +78,11 @@ const Index = () => {
       "method": "GET",
       "mode": "cors",
       "credentials": "omit"
+    });
+
+     // Sync usage data with leaderboard on initial load
+     syncWithLeaderboard().catch(err => {
+      console.error("Error syncing with leaderboard on initial load:", err);
     });
   }, []);
 

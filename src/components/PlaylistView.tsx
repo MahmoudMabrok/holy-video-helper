@@ -120,7 +120,7 @@ export function PlaylistView({
             
             return (
               <VideoCard
-                key={video.title}
+                key={videoId}
                 video={video}
                 isSelected={videoId === selectedVideoId}
                 progress={progress || 0}
