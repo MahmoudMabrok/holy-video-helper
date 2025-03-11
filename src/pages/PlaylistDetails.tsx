@@ -9,8 +9,6 @@ import { useVideoStore } from "@/store/videoStore";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-const ID_COUNTER = "1312921/t/5";
-
 export default function PlaylistDetails() {
   const { playlistId } = useParams<{ playlistId: string }>();
   const [searchParams] = useSearchParams();
@@ -26,28 +24,6 @@ export default function PlaylistDetails() {
     queryKey: ["playlist", playlistId],
     queryFn: () => playlistId ? fetchPlaylistVideos(playlistId) : Promise.resolve([]),
   });
-
-  useEffect(() => {
-    fetch(`https://www.freevisitorcounters.com/en/home/counter/${ID_COUNTER}`, {
-      "headers": {
-        "accept": "*/*",
-        "accept-language": "en-US,en;q=0.9",
-        "priority": "u=1",
-        "sec-ch-ua": "\"Chromium\";v=\"134\", \"Not:A-Brand\";v=\"24\", \"Google Chrome\";v=\"134\"",
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": "\"macOS\"",
-        "sec-fetch-dest": "script",
-        "sec-fetch-mode": "no-cors",
-        "sec-fetch-site": "cross-site",
-        "sec-fetch-storage-access": "active"
-      },
-      "referrerPolicy": "strict-origin-when-cross-origin",
-      "body": null,
-      "method": "GET",
-      "mode": "cors",
-      "credentials": "omit"
-    });
-  }, []);
 
   useEffect(() => {
     if (videosError) {
@@ -113,7 +89,6 @@ export default function PlaylistDetails() {
                 if (!duration || duration === 0) return;
               }}
             />
-            <img className="my-16" src={`https://www.freevisitorcounters.com/en/counter/render/${ID_COUNTER}`}/>
           </div>
         </ScrollArea>
       </div>

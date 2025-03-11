@@ -1,3 +1,4 @@
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -21,35 +22,51 @@ export default defineConfig(({ mode }) => ({
       injectRegister: 'auto',
       // This is critical - it ensures the correct base path
       base: mode === "development" ? "/" : "/holy-video-helper/",
-      strategies: 'generateSW',
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-        cleanupOutdatedCaches: true,
-      },
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg', 'icons/icon-192x192.png', 'icons/icon-512x512.png'],
+      includeAssets: ['favicon.ico', 'icons/*.png'],
       manifest: {
-        name: 'khelwatk',
-        short_name: 'khelwatk',
-        description: 'khelwatk',
-        theme_color: '#ffffff',
-        start_url: mode === "development" ? "/" : "/holy-video-helper/",
-        scope: mode === "development" ? "/" : "/holy-video-helper/",
+        name: 'Holy Video Helper',
+        short_name: 'HolyVid',
+        description: 'A curated collection of Islamic educational videos',
+        theme_color: '#4f46e5',
         display: 'standalone',
+        background_color: '#ffffff',
         icons: [
           {
-            src: 'icons/icon-192.png',
+            src: 'icons/icon-192x192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'icons/icon-512.png',
+            src: 'icons/icon-512x512.png',
             sizes: '512x512',
             type: 'image/png'
           }
-        ]
-      }
+        ],
+        start_url: ".",
+        scope: "."
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/img\.youtube\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'youtube-image-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
+        navigateFallback: null,
+      },
     }),
-    mode === 'development' &&  componentTagger(),
+    mode === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
