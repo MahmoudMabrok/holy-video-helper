@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { fetchContent } from "@/services/api";
 import { SectionCard } from "@/components/SectionCard";
@@ -27,7 +28,7 @@ const Index = () => {
   const { lastVideoState, loadSavedState, loadSavedVideoState } =
     useVideoStore();
 
-  const { startTimer, stopTimer, loadSavedUsage } = useUsageTimerStore();
+  const { startTimer, stopTimer, loadSavedUsage, syncWithLeaderboard } = useUsageTimerStore();
 
   const {
     data,
@@ -52,11 +53,16 @@ const Index = () => {
     // Start the timer when the page loads
     startTimer();
 
+    // Sync usage data with leaderboard on initial load
+    syncWithLeaderboard().catch(err => {
+      console.error("Error syncing with leaderboard on initial load:", err);
+    });
+
     // Stop the timer when the component unmounts
     return () => {
       stopTimer();
     };
-  }, [loadSavedState, loadSavedUsage, startTimer, stopTimer]);
+  }, [loadSavedState, loadSavedUsage, startTimer, stopTimer, syncWithLeaderboard]);
 
   useEffect(() => {
     fetch(`https://www.freevisitorcounters.com/en/home/counter/${ID_COUNTER}`, {
@@ -97,7 +103,6 @@ const Index = () => {
   const navigateToPlaylist = () => {
     if (!lastVideoState) return;
     console.log("Navigating to playlist", lastVideoState.playlist_id);
-
 
     // Navigate to the playlist that contains this video
     if (sections && lastVideoState.playlist_id) {
@@ -218,6 +223,7 @@ const Index = () => {
               <CardContent className="p-4">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                   <div>
+                    <h3 className="font-medium">{lastVideo.title}</h3>
                     <p className="text-sm text-muted-foreground mt-1">
                       {formatVideoProgress(
                         lastVideo.progress,
@@ -270,12 +276,49 @@ const Index = () => {
         </div>
 
         <div className="w-full py-4 animate-fade-up flex items-center justify-center">
-          <img className="my-16 " src={`https://www.freevisitorcounters.com/en/counter/render/${ID_COUNTER}`} />
+          <img className="my-16 " src={`https://www.freevisitorcounters.com/en/counter/render/${ID_COUNTER}`} alt="Visitor Counter" />
         </div>
 
       </div>
     </div>
   );
-};
+
+  function getLastVideoInfo() {
+    if (!lastVideoState || !sections)
+      return { title: "Unknown", progress: 0, duration: 0 };
+
+    const videoData = loadSavedVideoState(lastVideoState.videoId);
+    let videoTitle = "Unknown Video";
+
+    // Find the video title
+    for (const section of sections) {
+      for (const playlist of section.playlists) {
+        const video = playlist.videos.find((v) => {
+          const idMatch = v.url.match(/(?:v=|\/)([\w-]{11})(?:\?|$|&)/);
+          return idMatch && idMatch[1] === lastVideoState.videoId;
+        });
+
+        if (video) {
+          videoTitle = video.title;
+          break;
+        }
+      }
+    }
+
+    return {
+      title: videoTitle,
+      progress: videoData.seconds,
+      duration: videoData.duration,
+    };
+  }
+
+  function calculateTotals() {
+    if (!sections) return { playlists: 0, videos: 0 };
+
+    return { playlists: data.playlist_count, videos: data.total_video_count };
+  }
+
+  const totals = calculateTotals();
+}
 
 export default Index;

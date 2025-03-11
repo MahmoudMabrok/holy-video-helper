@@ -47,7 +47,11 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
   leaderboard: [],
   
   startTimer: () => {
-    set({ startTime: Date.now() });
+    // Only start timer if it's not already running
+    if (!get().startTime) {
+      set({ startTime: Date.now() });
+      console.log('Timer started at:', new Date().toISOString());
+    }
   },
   
   stopTimer: () => {
@@ -56,6 +60,8 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
     if (!startTime) return;
     
     const elapsedMinutes = Math.round((Date.now() - startTime) / 60000);
+    console.log('Timer stopped. Elapsed minutes:', elapsedMinutes);
+    
     if (elapsedMinutes <= 0) return;
     
     const today = new Date().toLocaleDateString();
@@ -75,6 +81,7 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
     
     // Save to localStorage
     localStorage.setItem('daily_usage', JSON.stringify(newDailyUsage));
+    console.log('Updated daily usage:', newDailyUsage);
     
     set({ 
       startTime: null, 
@@ -97,15 +104,11 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
       if (savedUsage) {
         const usage = JSON.parse(savedUsage);
         set({ dailyUsage: usage });
+        console.log('Loaded saved usage:', usage);
         
         // Check for time-based badges on load
         const totalMinutes = get().getTotalUsageMinutes();
         useBadgeStore.getState().checkTimeBadges(totalMinutes);
-        
-        // Sync with leaderboard on initial load to ensure consistency
-        get().syncWithLeaderboard().catch(error => {
-          console.error('Failed to sync with leaderboard on load:', error);
-        });
       }
     } catch (error) {
       console.error('Error loading saved usage data:', error);
@@ -161,7 +164,7 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
 
         console.log('Upsert result:', result);
         
-        if (result.error) {
+        if (result?.error) {
           throw new Error(`Failed to sync usage: ${result.error.message}`);
         }
         
