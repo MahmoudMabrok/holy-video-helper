@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 
-import supabase from '../../supabase/connect'
+import supabase from '../../supabase/connect';
 import { useBadgeStore } from './badgeStore';
 
 interface UsageTime {
@@ -65,9 +65,7 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
     if (elapsedMinutes <= 0) return;
     
     const today = new Date().toLocaleDateString();
-
-    if(!dailyUsage) return; 
-
+    
     const existingDayIndex = dailyUsage.findIndex(item => item.day === today);
     
     let newDailyUsage;
@@ -129,6 +127,12 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
 
       console.log('Syncing with leaderboard. Total minutes:', totalMinutes, 'User ID:', userId,);
 
+      if (!supabase) {
+        console.error('Supabase client not initialized');
+        toast.error('Error connecting to the leaderboard service');
+        return;
+      }
+
       // First check if the user exists in the leaderboard
       const { data: existingUser, error: fetchError } = await supabase
         .from('app_usage_leaderboard')
@@ -166,6 +170,7 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
         console.log('Upsert result:', result);
         
         if (result?.error) {
+          console.error('Error in database operation:', result.error);
           throw new Error(`Failed to sync usage: ${result.error.message}`);
         }
         
@@ -185,6 +190,13 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
   fetchLeaderboard: async () => {
     try {
       console.log('Fetching leaderboard data');
+      
+      if (!supabase) {
+        console.error('Supabase client not initialized');
+        toast.error('Error connecting to the leaderboard service');
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('app_usage_leaderboard')
         .select('id, total_minutes, last_updated')
@@ -193,6 +205,7 @@ export const useUsageTimerStore = create<UsageTimerState>((set, get) => ({
       console.log('Leaderboard response:', data, error);
       
       if (error) {
+        console.error('Error in database query:', error);
         throw new Error(`Failed to fetch leaderboard: ${error.message}`);
       }
   
