@@ -63,14 +63,14 @@ export function FeedbackForm() {
     window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
   };
 
-  const sendViaEmail = () => {
-    const subject = "Feedback from Khelwatk App";
-    const body = `Name: ${form.getValues("name")}\nEmail: ${form.getValues("email")}\nMessage: ${form.getValues("message")}`;
-    const encodedSubject = encodeURIComponent(subject);
-    const encodedBody = encodeURIComponent(body);
-    const email = "mahmoudmabrok3579@gmail.com"; // Replace with your actual email
-    window.open(`mailto:${email}?subject=${encodedSubject}&body=${encodedBody}`, "_blank");
-  };
+  // const sendViaEmail = () => {
+  //   const subject = "Feedback from Khelwatk App";
+  //   const body = `Name: ${form.getValues("name")}\nEmail: ${form.getValues("email")}\nMessage: ${form.getValues("message")}`;
+  //   const encodedSubject = encodeURIComponent(subject);
+  //   const encodedBody = encodeURIComponent(body);
+  //   const email = "mahmoudmabrok3579@gmail.com"; // Replace with your actual email
+  //   window.open(`mailto:${email}?subject=${encodedSubject}&body=${encodedBody}`, "_blank");
+  // };
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -81,7 +81,7 @@ export function FeedbackForm() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
+            {/* <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
@@ -93,8 +93,8 @@ export function FeedbackForm() {
                   <FormMessage />
                 </FormItem>
               )}
-            />
-            <FormField
+            /> */}
+            {/* <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
@@ -106,7 +106,7 @@ export function FeedbackForm() {
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            /> */}
             <FormField
               control={form.control}
               name="message"
@@ -128,18 +128,18 @@ export function FeedbackForm() {
               )}
             />
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
-              <Button type="submit" disabled={isSubmitting}>
+              {/* <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Submitting..." : "Submit"}
                 <Send className="ml-2 h-4 w-4" />
-              </Button>
+              </Button> */}
               <Button type="button" variant="outline" onClick={sendViaWhatsApp}>
                 WhatsApp
                 <MessageSquare className="ml-2 h-4 w-4" />
               </Button>
-              <Button type="button" variant="outline" onClick={sendViaEmail}>
+              {/* <Button type="button" variant="outline" onClick={sendViaEmail}>
                 Email
                 <Mail className="ml-2 h-4 w-4" />
-              </Button>
+              </Button> */}
             </div>
           </form>
         </Form>
