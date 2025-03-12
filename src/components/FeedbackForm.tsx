@@ -57,9 +57,9 @@ export function FeedbackForm() {
   };
 
   const sendViaWhatsApp = () => {
-    const message = `Name: ${form.getValues("name")}\nEmail: ${form.getValues("email")}\nMessage: ${form.getValues("message")}`;
+    const message = `${form.getValues("message")}`;
     const encodedMessage = encodeURIComponent(message);
-    const whatsappNumber = "1234567890"; // Replace with your actual WhatsApp number
+    const whatsappNumber = "+201554104906"; // Replace with your actual WhatsApp number
     window.open(`https://wa.me/${whatsappNumber}?text=${encodedMessage}`, "_blank");
   };
 
@@ -68,7 +68,7 @@ export function FeedbackForm() {
     const body = `Name: ${form.getValues("name")}\nEmail: ${form.getValues("email")}\nMessage: ${form.getValues("message")}`;
     const encodedSubject = encodeURIComponent(subject);
     const encodedBody = encodeURIComponent(body);
-    const email = "your-email@example.com"; // Replace with your actual email
+    const email = "mahmoudmabrok3579@gmail.com"; // Replace with your actual email
     window.open(`mailto:${email}?subject=${encodedSubject}&body=${encodedBody}`, "_blank");
   };
 
