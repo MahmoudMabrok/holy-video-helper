@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { useVideoStore } from "@/store/videoStore";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface PlaylistViewProps {
@@ -48,6 +48,18 @@ export function PlaylistView({
         }
       }
     }, [selectedVideoId, playlist.videos]);
+
+    // Reorder videos to move the selected video to the top of the list
+    const orderedVideos = useMemo(() => {
+      if (!selectedVideoId || currentVideoIndex === -1) {
+        return playlist.videos;
+      }
+      
+      const videos = [...playlist.videos];
+      const selectedVideo = videos[currentVideoIndex];
+      videos.splice(currentVideoIndex, 1);
+      return [selectedVideo, ...videos];
+    }, [playlist.videos, selectedVideoId, currentVideoIndex]);
 
     const getStartTime = (videoId: string) => {
       const progressData = loadSavedVideoState(videoId);
@@ -111,7 +123,7 @@ export function PlaylistView({
       <div className="mt-6">
         <h2 className="text-xl font-medium mb-4">Playlist Videos</h2>
         <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
-          {playlist.videos.map((video: Video) => {
+          {orderedVideos.map((video: Video) => {
             const videoId = getVideoId(video.url);
             if (!videoId) return null;
 

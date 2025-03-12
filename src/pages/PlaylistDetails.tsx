@@ -11,7 +11,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 const ID_COUNTER = "1312921/t/5";
 
-
 export default function PlaylistDetails() {
   const { playlistId } = useParams<{ playlistId: string }>();
   const [searchParams] = useSearchParams();

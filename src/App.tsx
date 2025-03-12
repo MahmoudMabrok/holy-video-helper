@@ -13,6 +13,7 @@ import Statistics from "./pages/Statistics";
 import RecentVideos from "./pages/RecentVideos";
 import Usage from "./pages/Usage";
 import Leaderboard from "./pages/Leaderboard";
+import Feedback from "./pages/Feedback";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "./hooks/use-theme";
 import { useBadgeStore } from "./store/badgeStore";
@@ -40,6 +41,7 @@ const AppContent = () => {
           <Route path="/recent" element={<RecentVideos />} />
           <Route path="/usage" element={<Usage />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
+          <Route path="/feedback" element={<Feedback />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
