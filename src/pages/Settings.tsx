@@ -6,14 +6,17 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2, CheckSquare, Square, Loader2, ListChecks } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useVideoStore } from "@/store/videoStore";
 import { useUsageTimerStore } from "@/store/usageTimerStore";
+import { fetchAdvancedPlaylists, PlaylistEntry } from "@/services/api";
 
 interface SettingsForm {
   dataUrl: string;
+  advancedDataUrl: string;
+  appMode: string;
   videoQuality: string;
   playbackSpeed: string;
 }
@@ -39,32 +42,95 @@ const PLAYBACK_SPEEDS = [
   { value: "2", label: "2x" },
 ];
 
+const APP_MODES = [
+  { value: "basic", label: "Basic" },
+  { value: "advanced", label: "Advanced" },
+];
+
+function loadSelectedIds(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem('advanced_selected_playlists') || '[]');
+  } catch {
+    return [];
+  }
+}
+
 export default function Settings() {
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Playlist picker state
+  const [availablePlaylists, setAvailablePlaylists] = useState<PlaylistEntry[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>(loadSelectedIds);
+  const [playlistsLoading, setPlaylistsLoading] = useState(false);
+  const [playlistsError, setPlaylistsError] = useState<string | null>(null);
+
   const form = useForm<SettingsForm>({
     defaultValues: {
       dataUrl: localStorage.getItem('data_url') || 'https://raw.githubusercontent.com/MahmoudMabrok/MyDataCenter/main/',
+      advancedDataUrl: localStorage.getItem('advanced_data_url') || 'https://raw.githubusercontent.com/MahmoudMabrok/MyDataCenter/main/',
+      appMode: localStorage.getItem('app_mode') || 'basic',
       videoQuality: localStorage.getItem('video_quality') || 'auto',
       playbackSpeed: localStorage.getItem('playback_speed') || '1',
     }
   });
 
+  const watchedMode = form.watch('appMode');
+  const watchedAdvancedUrl = form.watch('advancedDataUrl');
+
+  // Auto-load playlists when Advanced mode is shown and we already have a saved URL
+  useEffect(() => {
+    if (watchedMode === 'advanced' && watchedAdvancedUrl) {
+      loadPlaylists(watchedAdvancedUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedMode]);
+
+  async function loadPlaylists(url: string) {
+    if (!url) {
+      setPlaylistsError('Please enter an Advanced Data URL first.');
+      return;
+    }
+    setPlaylistsLoading(true);
+    setPlaylistsError(null);
+    try {
+      const entries = await fetchAdvancedPlaylists(url);
+      setAvailablePlaylists(entries);
+    } catch {
+      setPlaylistsError('Failed to load playlists. Check the URL and try again.');
+      setAvailablePlaylists([]);
+    } finally {
+      setPlaylistsLoading(false);
+    }
+  }
+
+  const handleToggle = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
   const onSubmit = (data: SettingsForm) => {
     try {
       localStorage.setItem('data_url', data.dataUrl);
+      localStorage.setItem('advanced_data_url', data.advancedDataUrl);
+      localStorage.setItem('app_mode', data.appMode);
       localStorage.setItem('video_quality', data.videoQuality);
       localStorage.setItem('playback_speed', data.playbackSpeed);
-      
-      // Dispatch a custom event to notify other components
+      // Save selected playlists alongside the rest of settings
+      localStorage.setItem('advanced_selected_playlists', JSON.stringify(selectedIds));
+      // Also persist an id→title map so the home screen can show names without re-fetching
+      const titlesMap = Object.fromEntries(availablePlaylists.map((p) => [p.id, p.title]));
+      localStorage.setItem('advanced_playlist_titles', JSON.stringify(titlesMap));
+
       window.dispatchEvent(new Event('storage'));
-      
+
       toast({
         title: "Settings saved",
         description: "Your changes have been saved successfully."
       });
       navigate('/');
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to save settings.",
@@ -76,45 +142,43 @@ export default function Settings() {
   const clearAllData = () => {
     if (window.confirm("Are you sure you want to clear all data? This will delete all saved video progress and reset all settings.")) {
       try {
-        // Clear video progress data
-        const videoKeysToRemove = [];
+        const videoKeysToRemove: string[] = [];
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
           if (key && (key.startsWith('last_video') || key.includes('video_progress') || key.includes('daily_usage'))) {
             videoKeysToRemove.push(key);
           }
         }
-        
-        // Remove collected keys
         videoKeysToRemove.forEach(key => localStorage.removeItem(key));
-        
-        // Reset settings data
+
         const defaultUrl = 'https://raw.githubusercontent.com/MahmoudMabrok/MyDataCenter/main/';
         localStorage.setItem('data_url', defaultUrl);
+        localStorage.setItem('advanced_data_url', '');
+        localStorage.setItem('app_mode', 'basic');
         localStorage.setItem('video_quality', 'auto');
         localStorage.setItem('playback_speed', '1');
-        
-        // Reset form values
+        localStorage.removeItem('advanced_selected_playlists');
+
+        setAvailablePlaylists([]);
+        setSelectedIds([]);
+
         form.reset({
           dataUrl: defaultUrl,
+          advancedDataUrl: '',
+          appMode: 'basic',
           videoQuality: 'auto',
           playbackSpeed: '1'
         });
-        
-        // Reset video store
+
         useVideoStore.getState().loadSavedState();
-        
-        // Reset usage timer store
         useUsageTimerStore.getState().loadSavedUsage();
-        
-        // Dispatch storage event to notify other components
         window.dispatchEvent(new Event('storage'));
-        
+
         toast({
           title: "Data cleared",
           description: "All saved video progress and settings have been reset to defaults."
         });
-      } catch (error) {
+      } catch {
         toast({
           title: "Error",
           description: "Failed to clear data.",
@@ -128,11 +192,7 @@ export default function Settings() {
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            className="group"
-            onClick={() => navigate('/')}
-          >
+          <Button variant="ghost" className="group" onClick={() => navigate('/')}>
             <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
             Back
           </Button>
@@ -141,40 +201,163 @@ export default function Settings() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Data Source</CardTitle>
-            <CardDescription>
-              Configure the base URL where your content data is stored.
-            </CardDescription>
+            <CardTitle>App Mode</CardTitle>
+            <CardDescription>Choose how you want to browse content.</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+
+                {/* Mode selector */}
                 <FormField
                   control={form.control}
-                  name="dataUrl"
+                  name="appMode"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Base URL</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter base URL" {...field} />
-                      </FormControl>
+                      <FormLabel>Mode</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select mode" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {APP_MODES.map((m) => (
+                            <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormDescription>
-                        Enter the base URL of your JSON data source. The app will load "data.json" from this URL, and playlist files as "playlists/[playlist_id].json".
+                        <strong>Basic:</strong> loads all content from your data URL.<br />
+                        <strong>Advanced:</strong> lets you pick individual playlists from a separate hosted list.
                       </FormDescription>
                     </FormItem>
                   )}
                 />
-                
+
+                {/* Basic Data URL — only visible in Basic mode */}
+                {watchedMode === 'basic' && (
+                  <FormField
+                    control={form.control}
+                    name="dataUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Basic Data URL</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter base URL" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Base URL for Basic mode. Loads <code>data.json</code> and <code>playlists/[id].json</code> from here.
+                        </FormDescription>
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {/* Advanced section — only visible in Advanced mode */}
+                {watchedMode === 'advanced' && (
+                  <div className="space-y-4 rounded-lg border border-purple-200 dark:border-purple-800 p-4 bg-purple-50/50 dark:bg-purple-950/20">
+                    <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-medium">
+                      <ListChecks className="h-4 w-4" />
+                      Advanced Mode Settings
+                    </div>
+
+                    {/* Advanced URL */}
+                    <FormField
+                      control={form.control}
+                      name="advancedDataUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Advanced Data URL</FormLabel>
+                          <div className="flex gap-2">
+                            <FormControl>
+                              <Input placeholder="https://example.com/data/" {...field} />
+                            </FormControl>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => loadPlaylists(field.value)}
+                              disabled={playlistsLoading}
+                            >
+                              {playlistsLoading
+                                ? <Loader2 className="h-4 w-4 animate-spin" />
+                                : 'Load'}
+                            </Button>
+                          </div>
+                          <FormDescription>
+                            Base URL for Advanced mode. The app loads <code>playlists.json</code> (index) and <code>playlists/[id].json</code> (videos) from here.
+                          </FormDescription>
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Error */}
+                    {playlistsError && (
+                      <p className="text-sm text-red-500">{playlistsError}</p>
+                    )}
+
+                    {/* Playlist picker */}
+                    {availablePlaylists.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <FormLabel>Choose Playlists</FormLabel>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedIds(availablePlaylists.map((p) => p.id))}
+                            >
+                              Select All
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedIds([])}
+                            >
+                              Clear
+                            </Button>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {selectedIds.length} of {availablePlaylists.length} selected
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-72 overflow-y-auto pr-1">
+                          {availablePlaylists.map((p) => {
+                            const checked = selectedIds.includes(p.id);
+                            return (
+                              <div
+                                key={p.id}
+                                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors select-none
+                                  ${checked
+                                    ? 'bg-purple-100 border-purple-400 dark:bg-purple-900/40 dark:border-purple-600'
+                                    : 'bg-card border-border hover:bg-accent'
+                                  }`}
+                                onClick={() => handleToggle(p.id)}
+                              >
+                                {checked
+                                  ? <CheckSquare className="h-4 w-4 text-purple-500 shrink-0" />
+                                  : <Square className="h-4 w-4 text-muted-foreground shrink-0" />
+                                }
+                                <span className="text-sm font-medium line-clamp-2">{p.title}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Video Quality */}
                 <FormField
                   control={form.control}
                   name="videoQuality"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Video Quality</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                      >
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select video quality" />
@@ -182,9 +365,7 @@ export default function Settings() {
                         </FormControl>
                         <SelectContent>
                           {VIDEO_QUALITIES.map((quality) => (
-                            <SelectItem key={quality.value} value={quality.value}>
-                              {quality.label}
-                            </SelectItem>
+                            <SelectItem key={quality.value} value={quality.value}>{quality.label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -194,17 +375,15 @@ export default function Settings() {
                     </FormItem>
                   )}
                 />
-                
+
+                {/* Playback Speed */}
                 <FormField
                   control={form.control}
                   name="playbackSpeed"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Playback Speed</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                      >
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select playback speed" />
@@ -212,9 +391,7 @@ export default function Settings() {
                         </FormControl>
                         <SelectContent>
                           {PLAYBACK_SPEEDS.map((speed) => (
-                            <SelectItem key={speed.value} value={speed.value}>
-                              {speed.label}
-                            </SelectItem>
+                            <SelectItem key={speed.value} value={speed.value}>{speed.label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -224,18 +401,15 @@ export default function Settings() {
                     </FormItem>
                   )}
                 />
-                
+
                 <div className="flex gap-4">
                   <Button type="submit">Save Changes</Button>
-                  <Button 
-                    type="button" 
-                    variant="destructive" 
-                    onClick={clearAllData}
-                  >
+                  <Button type="button" variant="destructive" onClick={clearAllData}>
                     <Trash2 className="w-4 h-4 mr-2" />
                     Clear All Data
                   </Button>
                 </div>
+
               </form>
             </Form>
           </CardContent>

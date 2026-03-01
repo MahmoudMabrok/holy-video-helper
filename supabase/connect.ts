@@ -1,21 +1,19 @@
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
-  console.warn('Supabase environment variables are missing. Some features may not work correctly.');
-}
+let supabase: SupabaseClient | null = null;
 
-const supabase = createClient(
-  supabaseUrl || '',
-  supabaseKey || '',
-  {
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey, {
     auth: {
       persistSession: true
     }
-  }
-);
+  });
+} else {
+  console.warn('Supabase environment variables are missing. Leaderboard sync will be disabled.');
+}
 
 export default supabase;

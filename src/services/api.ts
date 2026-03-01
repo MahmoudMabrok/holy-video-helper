@@ -39,13 +39,19 @@ export interface Content {
   total_video_count: number;
 }
 
+// Advanced mode — playlist index entry
+export interface PlaylistEntry {
+  id: string;
+  title: string;
+}
+
 export async function fetchContent(): Promise<Content> {
   try {
-    const baseUrl = localStorage.getItem('data_url') || 
+    const baseUrl = localStorage.getItem('data_url') ||
       "https://raw.githubusercontent.com/MahmoudMabrok/MyDataCenter/main/";
     const dataUrl = `${baseUrl}data.json`;
     console.log(`Fetching content from: ${dataUrl}`);
-    
+
     const response = await fetch(dataUrl);
 
     if (!response.ok) throw new Error("Failed to fetch content");
@@ -70,7 +76,7 @@ export async function fetchContent(): Promise<Content> {
       };
     });
 
-    return { sections , playlist_count: data.playlist_count , total_video_count: data.total_video_count };
+    return { sections, playlist_count: data.playlist_count, total_video_count: data.total_video_count };
   } catch (error) {
     console.error("Error fetching content:", error);
     throw error;
@@ -79,26 +85,26 @@ export async function fetchContent(): Promise<Content> {
 
 export async function fetchPlaylistVideos(playlistId: string): Promise<Video[]> {
   try {
-    const baseUrl = localStorage.getItem('data_url') || 
+    const baseUrl = localStorage.getItem('data_url') ||
       "https://raw.githubusercontent.com/MahmoudMabrok/MyDataCenter/main/";
-    
+
     const playlistUrl = `${baseUrl}playlists/${playlistId}.json`;
     console.log(`Fetching playlist from: ${playlistUrl}`);
-    
+
     const response = await fetch(playlistUrl);
-    
+
     if (!response.ok) {
       console.error(`Failed to fetch playlist data: ${response.status}`);
       throw new Error(`Failed to fetch playlist data: ${response.status}`);
     }
-    
+
     const data = await response.json();
-    
+
     if (!data || !Array.isArray(data)) {
       console.error("Playlist data missing items array:", data);
       throw new Error("Playlist data missing items array");
     }
-    
+
     return data.map((item: ApiItem) => ({
       title: item.title,
       url: item.url,
@@ -106,6 +112,52 @@ export async function fetchPlaylistVideos(playlistId: string): Promise<Video[]> 
     }));
   } catch (error) {
     console.error(`Error fetching playlist videos for ${playlistId}:`, error);
+    throw error;
+  }
+}
+
+// ────────────────────────────────────────────────────────────────
+// Advanced mode helpers
+// ────────────────────────────────────────────────────────────────
+
+/**
+ * Fetch the playlist index from {baseUrl}/playlists.json.
+ * Each entry contains { id, title }.
+ */
+export async function fetchAdvancedPlaylists(baseUrl: string): Promise<PlaylistEntry[]> {
+  try {
+    const url = `${baseUrl.replace(/\/$/, '')}/playlists.json`;
+    console.log(`[Advanced] Fetching playlist index from: ${url}`);
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch advanced playlists: ${response.status}`);
+    const data = await response.json();
+    if (!Array.isArray(data)) throw new Error('Advanced playlists.json must be an array');
+    return data as PlaylistEntry[];
+  } catch (error) {
+    console.error('Error fetching advanced playlists:', error);
+    throw error;
+  }
+}
+
+/**
+ * Fetch videos for a specific playlist in Advanced mode.
+ * Hits {baseUrl}/playlists/{playlistId}.json — same shape as Basic mode.
+ */
+export async function fetchAdvancedPlaylistVideos(baseUrl: string, playlistId: string): Promise<Video[]> {
+  try {
+    const url = `${baseUrl.replace(/\/$/, '')}/playlists/${playlistId}.json`;
+    console.log(`[Advanced] Fetching playlist videos from: ${url}`);
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch advanced playlist: ${response.status}`);
+    const data = await response.json();
+    if (!Array.isArray(data)) throw new Error('Advanced playlist data must be an array');
+    return data.map((item: ApiItem) => ({
+      title: item.title,
+      url: item.url,
+      playlist_id: playlistId,
+    }));
+  } catch (error) {
+    console.error(`Error fetching advanced playlist videos for ${playlistId}:`, error);
     throw error;
   }
 }

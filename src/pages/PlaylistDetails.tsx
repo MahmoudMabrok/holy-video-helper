@@ -1,7 +1,7 @@
 
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { fetchPlaylistVideos } from "@/services/api";
+import { fetchPlaylistVideos, fetchAdvancedPlaylistVideos } from "@/services/api";
 import { useState, useEffect } from "react";
 import { PlaylistView } from "@/components/PlaylistView";
 import { Header } from "@/components/Header";
@@ -39,14 +39,23 @@ export default function PlaylistDetails() {
       "credentials": "omit"
     });
   }, [selectedVideoId]);
-  
-  const { 
-    videoProgress, 
+
+  const {
+    videoProgress,
   } = useVideoStore();
 
+  const appMode = localStorage.getItem('app_mode') || 'basic';
+  const advancedDataUrl = localStorage.getItem('advanced_data_url') || '';
+
   const { data: playlistVideos, isLoading: videosLoading, error: videosError } = useQuery({
-    queryKey: ["playlist", playlistId],
-    queryFn: () => playlistId ? fetchPlaylistVideos(playlistId) : Promise.resolve([]),
+    queryKey: ["playlist", playlistId, appMode],
+    queryFn: () => {
+      if (!playlistId) return Promise.resolve([]);
+      if (appMode === 'advanced' && advancedDataUrl) {
+        return fetchAdvancedPlaylistVideos(advancedDataUrl, playlistId);
+      }
+      return fetchPlaylistVideos(playlistId);
+    },
   });
 
   useEffect(() => {
@@ -113,7 +122,7 @@ export default function PlaylistDetails() {
                 if (!duration || duration === 0) return;
               }}
             />
-            <img className="my-16" src={`https://www.freevisitorcounters.com/en/counter/render/${ID_COUNTER}`}/>
+            <img className="my-16" src={`https://www.freevisitorcounters.com/en/counter/render/${ID_COUNTER}`} />
           </div>
         </ScrollArea>
       </div>
